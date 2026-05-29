@@ -19,6 +19,7 @@ TEMP_RE = re.compile(r"(?P<name>[A-Za-z0-9_]+)@(?P<temp>\d+(?:\.\d+)?)C")
 RAIL_RE = re.compile(r"(?P<rail>[A-Z0-9_]+)\s+(?P<inst>\d+)mW/(?P<avg>\d+)mW")
 
 PRIMARY_POWER_RAILS = (
+    "VIN",
     "VDD_IN",
     "POM_5V_IN",
     "VIN_SYS_5V0",

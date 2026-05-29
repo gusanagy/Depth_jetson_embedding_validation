@@ -14,6 +14,11 @@ RUN python3 -m pip install --upgrade pip setuptools wheel && \
     omegaconf \
     imageio \
     opencv-python-headless \
+    pyyaml \
+    albumentations \
+    huggingface_hub \
+    einops \
+    transformations \
     transforms3d \
     trimesh
 

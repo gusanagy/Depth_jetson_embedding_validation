@@ -8,8 +8,10 @@ Usage:
   build_docker_images.sh [options]
 
 Options:
-  --base-image IMAGE     Override the NVIDIA base image.
+  --base-image IMAGE     Override the NVIDIA source image for Dockerfile.base.
                          Default: nvcr.io/nvidia/pytorch:26.04-py3
+  --parent-image IMAGE   Override the parent image used by mono/stereo.
+                         Default: depth-jetson-base:thor-jp71
   --only NAME            Build only one image: base, mono, stereo
   --no-cache             Disable docker build cache.
   --workspace-root PATH  Default: ~/Documents/depth_validation_workspace
@@ -18,6 +20,7 @@ EOF
 }
 
 BASE_IMAGE=${BASE_IMAGE:-nvcr.io/nvidia/pytorch:26.04-py3}
+PARENT_IMAGE=${PARENT_IMAGE:-depth-jetson-base:thor-jp71}
 ONLY=""
 NO_CACHE=0
 WORKSPACE_ROOT="$HOME/Documents/depth_validation_workspace"
@@ -26,6 +29,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --base-image)
       BASE_IMAGE=$2
+      shift 2
+      ;;
+    --parent-image)
+      PARENT_IMAGE=$2
       shift 2
       ;;
     --only)
@@ -77,6 +84,7 @@ build_one() {
   local name=$1
   local file=$2
   local tag=$3
+  local parent=$4
   local log_file="$LOG_DIR/build_${name}_$(date +%Y%m%d_%H%M%S).log"
 
   echo
@@ -87,7 +95,7 @@ build_one() {
 
   DOCKER_BUILDKIT=1 "${DOCKER_CMD[@]}" build \
     "${docker_flags[@]}" \
-    --build-arg BASE_IMAGE="$BASE_IMAGE" \
+    --build-arg BASE_IMAGE="$parent" \
     -f "$file" \
     -t "$tag" \
     "$REPO_ROOT" | tee "$log_file"
@@ -95,19 +103,18 @@ build_one() {
 
 case "$ONLY" in
   "")
-    build_one base "$REPO_ROOT/docker/jetson/Dockerfile.base" "depth-jetson-base:thor-jp71"
-    BASE_IMAGE="depth-jetson-base:thor-jp71"
-    build_one mono "$REPO_ROOT/docker/jetson/Dockerfile.mono" "depth-jetson-mono:thor-jp71"
-    build_one stereo "$REPO_ROOT/docker/jetson/Dockerfile.stereo" "depth-jetson-stereo:thor-jp71"
+    build_one base "$REPO_ROOT/docker/jetson/Dockerfile.base" "depth-jetson-base:thor-jp71" "$BASE_IMAGE"
+    build_one mono "$REPO_ROOT/docker/jetson/Dockerfile.mono" "depth-jetson-mono:thor-jp71" "$PARENT_IMAGE"
+    build_one stereo "$REPO_ROOT/docker/jetson/Dockerfile.stereo" "depth-jetson-stereo:thor-jp71" "$PARENT_IMAGE"
     ;;
   base)
-    build_one base "$REPO_ROOT/docker/jetson/Dockerfile.base" "depth-jetson-base:thor-jp71"
+    build_one base "$REPO_ROOT/docker/jetson/Dockerfile.base" "depth-jetson-base:thor-jp71" "$BASE_IMAGE"
     ;;
   mono)
-    build_one mono "$REPO_ROOT/docker/jetson/Dockerfile.mono" "depth-jetson-mono:thor-jp71"
+    build_one mono "$REPO_ROOT/docker/jetson/Dockerfile.mono" "depth-jetson-mono:thor-jp71" "$PARENT_IMAGE"
     ;;
   stereo)
-    build_one stereo "$REPO_ROOT/docker/jetson/Dockerfile.stereo" "depth-jetson-stereo:thor-jp71"
+    build_one stereo "$REPO_ROOT/docker/jetson/Dockerfile.stereo" "depth-jetson-stereo:thor-jp71" "$PARENT_IMAGE"
     ;;
   *)
     echo "Invalid --only value: $ONLY" >&2

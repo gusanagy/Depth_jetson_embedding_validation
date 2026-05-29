@@ -64,6 +64,11 @@ O script `scripts/jetson/sync_models_from_popos.sh` suporta tres perfis:
 
 Para o primeiro teste na Jetson, recomendo `code_weights`.
 
+Para rodar inferencia real:
+
+- modelos monoculares: use `full` para trazer as pastas inteiras de imagens dos datasets;
+- `UWStereo`: rode apenas a parte `val`.
+
 ## Passo a passo
 
 ### 1. Entrar na Jetson
@@ -119,6 +124,13 @@ Para copiar apenas um modelo:
 bash scripts/jetson/sync_models_from_popos.sh --profile code_weights --model da2
 ```
 
+Para preparar os dois primeiros alvos de inferencia com os datasets necessarios:
+
+```bash
+bash scripts/jetson/sync_models_from_popos.sh --profile full --model da2
+bash scripts/jetson/sync_models_from_popos.sh --profile full --model foundation
+```
+
 Observacao:
 
 - o script usa `rsync` por `ssh`
@@ -166,6 +178,62 @@ Ou apenas:
 ```bash
 bash scripts/jetson/smoke_test_images.sh --only mono
 ```
+
+### 7. Rodar os primeiros modelos
+
+`Depth Anything V2`:
+
+- processa a pasta inteira de cada dataset encontrado em `datasets/`
+
+```bash
+cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
+bash scripts/jetson/run_depth_anything_v2.sh --encoder vitb
+```
+
+`FoundationStereo`:
+
+- processa apenas `val/left` e `val/right`
+- se `FoundationStereo/datasets` nao existir, usa como fallback o `uwstereo/images/val` do `IGEV`
+
+```bash
+cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
+bash scripts/jetson/run_foundation_stereo.sh
+```
+
+Suite inicial:
+
+```bash
+bash scripts/jetson/run_first_models_suite.sh
+```
+
+### 8. Benchmark por modo de potencia
+
+Listar modos:
+
+```bash
+bash scripts/jetson/list_power_modes.sh
+```
+
+Trocar modo:
+
+```bash
+bash scripts/jetson/set_power_mode.sh 1
+bash scripts/jetson/set_power_mode.sh 120W
+```
+
+Rodar benchmark com `tegrastats` por varios modos:
+
+```bash
+bash scripts/jetson/run_power_mode_benchmark.sh \
+  --label da2_vitb \
+  --modes 1,2,3 -- \
+  bash scripts/jetson/run_depth_anything_v2.sh --dataset suim --encoder vitb
+```
+
+Observacao:
+
+- na Jetson Thor validada aqui, `tegrastats` expõe `VIN`, `VIN_SYS_5V0`, `VDD_GPU` e `VDD_CPU_SOC_MSS`
+- o parser foi ajustado para priorizar `VIN`, que representa melhor a potencia total da placa
 
 ## Dockerfiles incluidos
 
