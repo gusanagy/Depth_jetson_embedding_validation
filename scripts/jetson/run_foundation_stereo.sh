@@ -40,6 +40,7 @@ done
 MODEL_ROOT="$WORKSPACE_ROOT/external_models/FoundationStereo"
 OUTPUT_ROOT="$WORKSPACE_ROOT/artifacts/foundation_stereo/val"
 SHIM_DIR="$WORKSPACE_ROOT/artifacts/foundation_stereo_shims"
+RUNNER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 if [[ -z "$DATASET_ROOT" ]]; then
   if [[ -d "$MODEL_ROOT/datasets/uwstereo/images/val" ]]; then
@@ -126,8 +127,9 @@ for left_img in "${left_images[@]}"; do
     -v "$DATASET_ROOT":"$CONTAINER_DATA_ROOT" \
     -v "$sample_out":/workspace/output \
     -v "$SHIM_DIR":/workspace/shims:ro \
+    -v "$RUNNER_ROOT":/workspace/runner:ro \
     "$IMAGE" \
-    bash -lc "cd /workspace/model && PYTHONPATH=/workspace/shims:\$PYTHONPATH python3 scripts/run_demo.py --left_file \"$container_left\" --right_file \"$container_right\" --ckpt_dir \"$CONTAINER_CKPT\" --out_dir /workspace/output"
+    bash -lc "cd /workspace/model && PYTHONPATH=/workspace/shims:\$PYTHONPATH python3 /workspace/runner/scripts/jetson/foundation_stereo_entrypoint.py --script /workspace/model/scripts/run_demo.py -- --left_file \"$container_left\" --right_file \"$container_right\" --ckpt_dir \"$CONTAINER_CKPT\" --out_dir /workspace/output"
 
   if [[ -n "$LIMIT" && "$count" -ge "$LIMIT" ]]; then
     break
