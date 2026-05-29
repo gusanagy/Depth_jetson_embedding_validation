@@ -193,6 +193,10 @@ bash scripts/jetson/run_depth_anything_v2.sh --encoder vitb
 bash scripts/jetson/run_depth_anything_v2.sh --dataset val_suim --encoder vitb --limit 4
 ```
 
+Saidas geradas:
+
+- `~/Documents/depth_validation_workspace/artifacts/da2/<dataset>/<encoder>/`
+
 `FoundationStereo`:
 
 - processa apenas `val/left` e `val/right`
@@ -205,6 +209,10 @@ cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
 bash scripts/jetson/run_foundation_stereo.sh
 bash scripts/jetson/run_foundation_stereo.sh --limit 4
 ```
+
+Saidas geradas:
+
+- `~/Documents/depth_validation_workspace/artifacts/foundation_stereo/val/<sample_id>/`
 
 Suite inicial:
 
@@ -227,13 +235,70 @@ bash scripts/jetson/set_power_mode.sh 1
 bash scripts/jetson/set_power_mode.sh 120W
 ```
 
-Rodar benchmark com `tegrastats` por varios modos:
+Rodar benchmark com `tegrastats` por varios modos de uma vez:
 
 ```bash
 bash scripts/jetson/run_power_mode_benchmark.sh \
   --label foundation_limit1 \
   --modes 0,1,2,3 -- \
   bash scripts/jetson/run_foundation_stereo.sh --limit 1
+```
+
+Esse wrapper agora:
+
+- cria `plan.json`
+- roda todos os modos que conseguem trocar em runtime
+- para no primeiro modo que exigir reboot
+
+### 9. Fluxo modular para continuar apos reboot
+
+Preparar o plano:
+
+```bash
+cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
+bash scripts/jetson/prepare_power_mode_plan.sh \
+  --label foundation_limit1_modular \
+  --modes 0,1,2,3 -- \
+  bash scripts/jetson/run_foundation_stereo.sh --limit 1
+```
+
+Rodar ate o proximo reboot obrigatorio:
+
+```bash
+bash scripts/jetson/resume_power_mode_plan.sh --label foundation_limit1_modular
+```
+
+Se o script parar dizendo que o proximo modo exige reboot:
+
+1. reinicie a Jetson no modo desejado
+2. confirme o modo atual:
+
+```bash
+bash scripts/jetson/get_current_power_mode.sh
+```
+
+3. continue o plano sem tentar trocar o modo de novo:
+
+```bash
+bash scripts/jetson/resume_power_mode_plan.sh \
+  --label foundation_limit1_modular \
+  --skip-set-mode
+```
+
+Se quiser rodar apenas um unico modo manualmente:
+
+```bash
+bash scripts/jetson/run_power_mode_once.sh \
+  --label foundation_limit1_modular \
+  --mode 2 \
+  --skip-set-mode
+```
+
+Consolidar os resultados do plano:
+
+```bash
+python3 scripts/jetson/summarize_power_mode_results.py \
+  --label foundation_limit1_modular
 ```
 
 Observacao:
@@ -243,6 +308,43 @@ Observacao:
 - nos testes reais desta Thor, `MAXN` e `120W` trocaram em runtime; `90W` e `70W` pediram reboot
 - o wrapper agora grava `energy_j`, `energy_joules`, `avg_power_w`, `peak_power_w` e marca como `skipped_reboot_required` os modos que nao podem trocar online
 - `jgflops` so aparece quando houver um `flops.json` associado ao benchmark do modelo
+
+### 10. Onde ficam os resultados
+
+Saidas de inferencia:
+
+- `Depth Anything V2`: `~/Documents/depth_validation_workspace/artifacts/da2/`
+- `FoundationStereo`: `~/Documents/depth_validation_workspace/artifacts/foundation_stereo/`
+
+Relatorios de benchmark por modo:
+
+- raiz: `~/Documents/depth_validation_workspace/reports/tegrastats/<label>/`
+- um diretorio por modo:
+  - `0_MAXN_`
+  - `1_120W_`
+  - `2_90W_`
+  - `3_70W_`
+
+Arquivos principais por modo:
+
+- `tegrastats.log`
+- `run_meta.json`
+- `command.stdout.log`
+- `command.stderr.log`
+- `tegrastats_summary.json`
+- `flops.json` quando fornecido no plano
+- `skipped.json` quando o modo exige reboot e ainda nao foi medido
+
+Arquivos consolidados do plano:
+
+- `plan.json`
+- `summary.json`
+- `summary.csv`
+
+Resultados ja gerados nos testes desta maquina:
+
+- `~/Documents/depth_validation_workspace/reports/tegrastats/foundation_limit1/`
+- `~/Documents/depth_validation_workspace/reports/tegrastats/foundation_limit1_v2/`
 
 ## Dockerfiles incluidos
 
