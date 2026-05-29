@@ -39,6 +39,7 @@ done
 
 MODEL_ROOT="$WORKSPACE_ROOT/external_models/FoundationStereo"
 OUTPUT_ROOT="$WORKSPACE_ROOT/artifacts/foundation_stereo/val"
+SHIM_DIR="$WORKSPACE_ROOT/artifacts/foundation_stereo_shims"
 
 if [[ -z "$DATASET_ROOT" ]]; then
   if [[ -d "$MODEL_ROOT/datasets/uwstereo/images/val" ]]; then
@@ -86,6 +87,20 @@ if ! "${DOCKER[@]}" image inspect "$IMAGE" >/dev/null 2>&1; then
 fi
 
 mkdir -p "$OUTPUT_ROOT"
+mkdir -p "$SHIM_DIR"
+
+cat > "$SHIM_DIR/open3d.py" <<'EOF'
+class _UnavailableNamespace:
+    def __getattr__(self, name):
+        raise RuntimeError(
+            "open3d shim loaded: point cloud export is unavailable in this Jetson runner"
+        )
+
+
+geometry = _UnavailableNamespace()
+utility = _UnavailableNamespace()
+io = _UnavailableNamespace()
+EOF
 
 mapfile -t left_images < <(find "$LEFT_DIR" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) | sort)
 
@@ -110,8 +125,9 @@ for left_img in "${left_images[@]}"; do
     -v "$MODEL_ROOT":/workspace/model \
     -v "$DATASET_ROOT":"$CONTAINER_DATA_ROOT" \
     -v "$sample_out":/workspace/output \
+    -v "$SHIM_DIR":/workspace/shims:ro \
     "$IMAGE" \
-    bash -lc "cd /workspace/model && python3 scripts/run_demo.py --left_file \"$container_left\" --right_file \"$container_right\" --ckpt_dir \"$CONTAINER_CKPT\" --out_dir /workspace/output"
+    bash -lc "cd /workspace/model && PYTHONPATH=/workspace/shims:\$PYTHONPATH python3 scripts/run_demo.py --left_file \"$container_left\" --right_file \"$container_right\" --ckpt_dir \"$CONTAINER_CKPT\" --out_dir /workspace/output"
 
   if [[ -n "$LIMIT" && "$count" -ge "$LIMIT" ]]; then
     break
