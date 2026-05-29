@@ -84,10 +84,10 @@ for mode_id in "${selected_ids[@]}"; do
 
   echo
   echo "== Power mode $mode_id ($mode_name) =="
-  "$SCRIPT_DIR/set_power_mode.sh" "$mode_id"
+  bash "$SCRIPT_DIR/set_power_mode.sh" "$mode_id"
   sleep "$COOLDOWN_SEC"
 
-  "$REPO_ROOT/scripts/benchmark/run_with_tegrastats.sh" "$out_dir" -- "$@"
+  bash "$REPO_ROOT/scripts/benchmark/run_with_tegrastats.sh" "$out_dir" -- "$@"
   python3 "$REPO_ROOT/scripts/benchmark/summarize_tegrastats.py" \
     "$out_dir/tegrastats.log" \
     --output "$out_dir/tegrastats_summary.json"
