@@ -1,0 +1,20 @@
+ARG BASE_IMAGE=depth-jetson-base:thor-jp71
+FROM ${BASE_IMAGE}
+
+ENV PIP_NO_CACHE_DIR=1
+
+RUN python3 -m pip install --upgrade pip setuptools wheel && \
+    python3 -m pip install \
+    "numpy<2" \
+    matplotlib \
+    pillow \
+    tqdm \
+    scipy \
+    timm \
+    omegaconf \
+    imageio \
+    opencv-python-headless \
+    transforms3d \
+    trimesh
+
+CMD ["python3", "-c", "import cv2, timm, torch; print({'timm': timm.__version__, 'torch': torch.__version__})"]

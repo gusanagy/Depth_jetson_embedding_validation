@@ -1,0 +1,22 @@
+ARG BASE_IMAGE=depth-jetson-base:thor-jp71
+FROM ${BASE_IMAGE}
+
+ENV PIP_NO_CACHE_DIR=1
+
+RUN python3 -m pip install --upgrade pip setuptools wheel && \
+    python3 -m pip install \
+    "numpy<2" \
+    pandas \
+    matplotlib \
+    pillow \
+    tqdm \
+    scipy \
+    einops \
+    timm \
+    omegaconf \
+    huggingface_hub \
+    safetensors \
+    imageio \
+    opencv-python-headless
+
+CMD ["python3", "-c", "import cv2, numpy, pandas, torch; print({'cv2': cv2.__version__, 'torch': torch.__version__})"]
