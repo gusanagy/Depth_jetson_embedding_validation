@@ -9,5 +9,5 @@ if [[ ! -f "$CONF" ]]; then
   exit 1
 fi
 
-grep -nE '< POWER_MODEL ID=' "$CONF" | \
+grep -nE '^[[:space:]]*< POWER_MODEL ID=' "$CONF" | \
   sed -E 's/.*ID=([0-9]+) NAME=([^ >]+).*/\1\t\2/'

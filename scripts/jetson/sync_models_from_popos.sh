@@ -88,6 +88,9 @@ common_excludes=(
   --exclude=__pycache__/
   --exclude=.mypy_cache/
   --exclude=.pytest_cache/
+  --exclude=logs/
+  --exclude=output/
+  --exclude=outputs/
 )
 
 profile_excludes=()
