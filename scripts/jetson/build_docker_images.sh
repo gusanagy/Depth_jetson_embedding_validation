@@ -58,6 +58,16 @@ LOG_DIR="$WORKSPACE_ROOT/docker_logs"
 
 mkdir -p "$LOG_DIR"
 
+if docker info >/dev/null 2>&1; then
+  DOCKER_CMD=(docker)
+elif sudo -n docker info >/dev/null 2>&1; then
+  DOCKER_CMD=(sudo -n docker)
+else
+  echo "Docker is installed but not accessible for the current user." >&2
+  echo "Either add the user to the docker group or allow passwordless sudo for docker." >&2
+  exit 1
+fi
+
 docker_flags=()
 if [[ $NO_CACHE -eq 1 ]]; then
   docker_flags+=(--no-cache)
@@ -75,7 +85,7 @@ build_one() {
   echo "Tag: $tag"
   echo "Log: $log_file"
 
-  DOCKER_BUILDKIT=1 docker build \
+  DOCKER_BUILDKIT=1 "${DOCKER_CMD[@]}" build \
     "${docker_flags[@]}" \
     --build-arg BASE_IMAGE="$BASE_IMAGE" \
     -f "$file" \

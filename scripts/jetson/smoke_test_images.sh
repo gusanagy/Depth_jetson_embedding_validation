@@ -31,6 +31,16 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if docker info >/dev/null 2>&1; then
+  DOCKER_CMD=(docker)
+elif sudo -n docker info >/dev/null 2>&1; then
+  DOCKER_CMD=(sudo -n docker)
+else
+  echo "Docker is installed but not accessible for the current user." >&2
+  echo "Either add the user to the docker group or allow passwordless sudo for docker." >&2
+  exit 1
+fi
+
 run_one() {
   local name=$1
   local image=$2
@@ -38,7 +48,7 @@ run_one() {
 
   echo
   echo "== Smoke test: $name =="
-  docker run --rm --gpus all "$image" bash -lc "$cmd"
+  "${DOCKER_CMD[@]}" run --rm --gpus all "$image" bash -lc "$cmd"
 }
 
 case "$ONLY" in

@@ -149,6 +149,10 @@ Logs:
 
 - `~/Documents/depth_validation_workspace/docker_logs/`
 
+Observacao:
+
+- se o usuario atual nao estiver no grupo `docker`, os scripts tentam usar `sudo -n docker` automaticamente
+
 ### 6. Rodar smoke tests nas imagens
 
 ```bash
