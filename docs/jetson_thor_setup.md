@@ -152,6 +152,7 @@ Logs:
 Observacao:
 
 - se o usuario atual nao estiver no grupo `docker`, os scripts tentam usar `sudo -n docker` automaticamente
+- na Jetson Thor validada aqui, o smoke test usa `--runtime=nvidia` em vez de `--gpus all`
 
 ### 6. Rodar smoke tests nas imagens
 

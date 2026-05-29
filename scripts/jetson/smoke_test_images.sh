@@ -41,6 +41,12 @@ else
   exit 1
 fi
 
+if "${DOCKER_CMD[@]}" info --format '{{json .Runtimes}}' 2>/dev/null | grep -q '"nvidia"'; then
+  GPU_ARGS=(--runtime=nvidia)
+else
+  GPU_ARGS=(--gpus all)
+fi
+
 run_one() {
   local name=$1
   local image=$2
@@ -48,7 +54,7 @@ run_one() {
 
   echo
   echo "== Smoke test: $name =="
-  "${DOCKER_CMD[@]}" run --rm --gpus all "$image" bash -lc "$cmd"
+  "${DOCKER_CMD[@]}" run --rm "${GPU_ARGS[@]}" "$image" bash -lc "$cmd"
 }
 
 case "$ONLY" in
