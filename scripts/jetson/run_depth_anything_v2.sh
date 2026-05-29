@@ -62,15 +62,21 @@ fi
 resolve_image_dir() {
   local base=$1
   local candidate
+  local first_image=""
 
-  if find "$base" -maxdepth 1 -type f | grep -Eq '\.(png|jpe?g|bmp|tif|tiff)$'; then
+  first_image=$(find "$base" -maxdepth 1 -type f \
+    \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.bmp' -o -iname '*.tif' -o -iname '*.tiff' \) \
+    -print -quit)
+  if [[ -n "$first_image" ]]; then
     printf '%s\n' "$base"
     return 0
   fi
 
   for candidate in rgb images image input imgs; do
-    if [[ -d "$base/$candidate" ]] && \
-      find "$base/$candidate" -maxdepth 1 -type f | grep -Eq '\.(png|jpe?g|bmp|tif|tiff)$'; then
+    first_image=$(find "$base/$candidate" -maxdepth 1 -type f \
+      \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.bmp' -o -iname '*.tif' -o -iname '*.tiff' \) \
+      -print -quit 2>/dev/null || true)
+    if [[ -d "$base/$candidate" && -n "$first_image" ]]; then
       printf '%s\n' "$base/$candidate"
       return 0
     fi
@@ -108,7 +114,8 @@ for ds in "${datasets[@]}"; do
 
   if [[ "$LIMIT" -gt 0 ]]; then
     temp_input_dir="$(mktemp -d "$WORKSPACE_ROOT/artifacts/da2_limit_${ds}_XXXXXX")"
-    find "$input_dir" -maxdepth 1 -type f | sort | head -n "$LIMIT" | while IFS= read -r file; do
+    mapfile -t limited_files < <(find "$input_dir" -maxdepth 1 -type f | sort)
+    for file in "${limited_files[@]:0:$LIMIT}"; do
       cp "$file" "$temp_input_dir/"
     done
     mount_args=(-v "$MODEL_ROOT":/workspace/model -v "$out_dir":/workspace/output -v "$temp_input_dir":/workspace/temp_input:ro)
