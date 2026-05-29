@@ -13,6 +13,7 @@ RUN python3 -m pip install --upgrade pip setuptools wheel && \
     timm \
     omegaconf \
     imageio \
+    joblib \
     opencv-python-headless \
     pyyaml \
     albumentations \
