@@ -184,20 +184,26 @@ bash scripts/jetson/smoke_test_images.sh --only mono
 `Depth Anything V2`:
 
 - processa a pasta inteira de cada dataset encontrado em `datasets/`
+- detecta automaticamente subpastas como `rgb/` e `images/`
+- `--limit N` ajuda a fazer smoke test rapido antes de rodar a pasta inteira
 
 ```bash
 cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
 bash scripts/jetson/run_depth_anything_v2.sh --encoder vitb
+bash scripts/jetson/run_depth_anything_v2.sh --dataset val_suim --encoder vitb --limit 4
 ```
 
 `FoundationStereo`:
 
 - processa apenas `val/left` e `val/right`
 - se `FoundationStereo/datasets` nao existir, usa como fallback o `uwstereo/images/val` do `IGEV`
+- usa cache persistente para Hugging Face e `torch.hub` em `~/Documents/depth_validation_workspace/cache/foundation_stereo/`
+- usa um shim de `open3d` apenas para inferencia 2D na Jetson; exportacao de nuvem de pontos continua fora desse wrapper
 
 ```bash
 cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
 bash scripts/jetson/run_foundation_stereo.sh
+bash scripts/jetson/run_foundation_stereo.sh --limit 4
 ```
 
 Suite inicial:
@@ -225,15 +231,18 @@ Rodar benchmark com `tegrastats` por varios modos:
 
 ```bash
 bash scripts/jetson/run_power_mode_benchmark.sh \
-  --label da2_vitb \
-  --modes 1,2,3 -- \
-  bash scripts/jetson/run_depth_anything_v2.sh --dataset suim --encoder vitb
+  --label foundation_limit1 \
+  --modes 0,1,2,3 -- \
+  bash scripts/jetson/run_foundation_stereo.sh --limit 1
 ```
 
 Observacao:
 
 - na Jetson Thor validada aqui, `tegrastats` expõe `VIN`, `VIN_SYS_5V0`, `VDD_GPU` e `VDD_CPU_SOC_MSS`
 - o parser foi ajustado para priorizar `VIN`, que representa melhor a potencia total da placa
+- nos testes reais desta Thor, `MAXN` e `120W` trocaram em runtime; `90W` e `70W` pediram reboot
+- o wrapper agora grava `energy_j`, `energy_joules`, `avg_power_w`, `peak_power_w` e marca como `skipped_reboot_required` os modos que nao podem trocar online
+- `jgflops` so aparece quando houver um `flops.json` associado ao benchmark do modelo
 
 ## Dockerfiles incluidos
 
