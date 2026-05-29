@@ -346,6 +346,61 @@ Resultados ja gerados nos testes desta maquina:
 - `~/Documents/depth_validation_workspace/reports/tegrastats/foundation_limit1/`
 - `~/Documents/depth_validation_workspace/reports/tegrastats/foundation_limit1_v2/`
 
+### 11. Tabela inicial no modo de energia atual
+
+Conferir o modo atual:
+
+```bash
+cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
+bash scripts/jetson/get_current_power_mode.sh
+```
+
+Gerar uma tabela inicial rapida no modo atual:
+
+```bash
+bash scripts/jetson/run_initial_table_current_mode.sh \
+  --label initial_table_quick \
+  --profile quick
+```
+
+Perfil `quick`:
+
+- `Depth Anything V2`: roda `all` com `--limit 8` por dataset encontrado
+- `FoundationStereo`: roda `uwstereo val` com `--limit 8`
+- `Depth Anything V3`, `Depth Pro`, `Marigold` e `IGEV`: entram na tabela como `runner_pending`
+
+Gerar uma tabela inicial completa no modo atual:
+
+```bash
+bash scripts/jetson/run_initial_table_current_mode.sh \
+  --label initial_table_full \
+  --profile full
+```
+
+Perfil `full`:
+
+- `Depth Anything V2`: roda todos os datasets encontrados sem `limit`
+- `FoundationStereo`: roda toda a validacao do `uwstereo`
+
+Arquivos da tabela inicial:
+
+- `~/Documents/depth_validation_workspace/reports/initial_table/<label>/context.json`
+- `~/Documents/depth_validation_workspace/reports/initial_table/<label>/summary.csv`
+- `~/Documents/depth_validation_workspace/reports/initial_table/<label>/summary.json`
+
+Relatorios detalhados por modelo:
+
+- `~/Documents/depth_validation_workspace/reports/initial_table/<label>/depth_anything_v2/`
+- `~/Documents/depth_validation_workspace/reports/initial_table/<label>/foundation_stereo/`
+
+Cada pasta de modelo inclui:
+
+- `tegrastats.log`
+- `run_meta.json`
+- `command.stdout.log`
+- `command.stderr.log`
+- `tegrastats_summary.json`
+
 ## Dockerfiles incluidos
 
 ### `docker/jetson/Dockerfile.base`
