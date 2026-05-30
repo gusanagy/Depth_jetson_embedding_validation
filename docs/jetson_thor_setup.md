@@ -233,7 +233,7 @@ Saidas geradas:
 
 - usa a imagem dedicada `depth-jetson-marigold`
 - faz fallback para os datasets do `Depth Anything V2` quando `Marigold/datasets` nao estiver sincronizado
-- salva `raw/.npy`, `grayscale/.png`, `color/.png` e `batch_run_info.json`
+- salva apenas o depth bruto em `raw/.npy` e o `batch_run_info.json`
 
 ```bash
 cd ~/Documents/depth_validation_workspace/depth_compare_sorriso

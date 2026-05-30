@@ -8,7 +8,6 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-import imageio.v2 as imageio
 import numpy as np
 import torch
 from PIL import Image
@@ -55,11 +54,7 @@ def main() -> int:
     input_dir = Path(args.input_dir)
     output_dir = Path(args.output_dir)
     raw_dir = output_dir / "raw"
-    grayscale_dir = output_dir / "grayscale"
-    color_dir = output_dir / "color"
     raw_dir.mkdir(parents=True, exist_ok=True)
-    grayscale_dir.mkdir(exist_ok=True)
-    color_dir.mkdir(exist_ok=True)
 
     add_model_root(model_root)
     from marigold import MarigoldDepthPipeline
@@ -85,17 +80,10 @@ def main() -> int:
             denoising_steps=args.denoise_steps,
             ensemble_size=args.ensemble_size,
             processing_res=args.processing_res,
-            color_map="Spectral",
             show_progress_bar=not args.no_progress,
         )
         depth = np.asarray(output.depth_np, dtype=np.float32)
-        grayscale = np.clip(depth, 0.0, 1.0)
-        grayscale = (grayscale * 255.0).astype(np.uint8)
-
         np.save(raw_dir / f"{image_path.stem}.npy", depth)
-        imageio.imwrite(grayscale_dir / f"{image_path.stem}.png", grayscale)
-        if output.depth_colored is not None:
-            output.depth_colored.save(color_dir / f"{image_path.stem}.png")
         processed += 1
 
     payload = {
