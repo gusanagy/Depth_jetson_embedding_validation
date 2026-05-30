@@ -4,6 +4,14 @@
 
 A rodada `initial_table_120w_full` em `120W` nao cobriu todos os modelos.
 
+Atualizacao de execucao em `2026-05-30`:
+
+- a fase de correcao e backfill da tabela foi concluida
+- `summary_enriched.{json,csv,jsonl}` foram gerados
+- o plot consolidado foi regenerado
+- a exportacao LaTeX foi regenerada
+- os artefatos locais e o workspace da Jetson foram sincronizados com esse estado
+
 Concluidos:
 
 - `Depth Anything V2`
@@ -80,6 +88,11 @@ Mudancas necessarias:
 Saida esperada:
 
 - `summary.csv` e `summary.json` passam a refletir throughput real
+
+Status:
+
+- concluido em `2026-05-30` com `scripts/jetson/backfill_initial_table_report.py`
+- a geracao visual e a exportacao em LaTeX agora fazem parte do fluxo documentado
 
 ## Fase 2: Matriz de Containers
 
@@ -222,15 +235,13 @@ Observacao:
 
 ## Ordem Recomendada De Execucao
 
-1. corrigir o pipeline da tabela
-2. fazer backfill de `DA2` e `FoundationStereo` sem rerun
-3. implementar `Depth Pro`
-4. implementar `Depth Anything V3`
-5. adicionar container e runner de `Marigold`
-6. tentar `IGEV` na imagem `stereo`; se falhar, separar container
-7. calcular `FLOPs` offline para todos
-8. gerar uma tabela consolidada
-9. somente se necessario, fazer um rerun final completo de todos os modelos em `120W`
+1. implementar `Depth Pro`
+2. implementar `Depth Anything V3`
+3. adicionar container e runner de `Marigold`
+4. tentar `IGEV` na imagem `stereo`; se falhar, separar container
+5. calcular `FLOPs` offline para todos
+6. gerar uma tabela consolidada
+7. somente se necessario, fazer um rerun final completo de todos os modelos em `120W`
 
 ## Resultado Esperado
 

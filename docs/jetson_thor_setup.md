@@ -467,6 +467,16 @@ Leitura atual dessa rodada:
 - `Depth Anything V3`, `Depth Pro`, `Marigold` e `IGEV` ainda aparecem como `runner_pending`
 - `DA2` e `FoundationStereo` nao precisam de rerun imediato; a prioridade e completar os runners faltantes e corrigir o pipeline da tabela
 
+Estado dessa analise em `2026-05-30`:
+
+- `summary_enriched.json`
+- `summary_enriched.csv`
+- `summary_enriched.jsonl`
+- `initial_table_120w_full_plot.png`
+- `table_publication.tex`
+
+ja foram regenerados tanto localmente quanto no workspace da Jetson
+
 ## Dockerfiles incluidos
 
 ### `docker/jetson/Dockerfile.base`
