@@ -1,0 +1,7 @@
+model_key,model_name,status,power_mode_id,power_mode_name,profile,dataset_scope,duration_s,energy_joules,avg_power_w,peak_power_w,primary_power_rail,samples,artifacts_dir,report_dir,notes
+depth_anything_v2,Depth Anything V2,completed,1,120W,full,all_datasets_full,696.211871,37159.560881,53.373926,86.082,VIN,3423,/home/PDI/Documents/depth_validation_workspace/artifacts/da2,/home/PDI/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full/depth_anything_v2,Monocular runner ready on Jetson.
+foundation_stereo,FoundationStereo,completed,1,120W,full,uwstereo_val_full,1147.624066,87544.227729,76.283018,144.042,VIN,5647,/home/PDI/Documents/depth_validation_workspace/artifacts/foundation_stereo,/home/PDI/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full/foundation_stereo,Stereo runner uses UWStereo validation split.
+depth_anything_v3,Depth Anything V3,runner_pending,1,120W,full,,,,,,,,,,Runner Jetson ainda nao implementado.
+depth_pro,Depth Pro,runner_pending,1,120W,full,,,,,,,,,,Runner Jetson ainda nao implementado.
+marigold,Marigold,runner_pending,1,120W,full,,,,,,,,,,Runner Jetson ainda nao implementado.
+igev,IGEV,runner_pending,1,120W,full,,,,,,,,,,Runner Jetson ainda nao implementado.

@@ -15,6 +15,21 @@ Assumicao usada neste documento:
 - interpretei `jflops` como eficiencia energetica normalizada por FLOPs, isto e, `J/GFLOP`;
 - se voce estiver usando uma ferramenta especifica com esse nome, vale alinhar antes da implementacao final.
 
+## Atualizacao De Status Em `2026-05-30`
+
+Desde a primeira rodada de portabilidade para Jetson Thor:
+
+- `Depth Anything V2` esta operacional com runner Jetson e benchmark energetico valido
+- `FoundationStereo` esta operacional com runner em lote, barra de progresso e benchmark energetico valido
+- a rodada `initial_table_120w_full` confirmou que os dois modelos acima podem ser reaproveitados sem rerun imediato
+- `Marigold` passou a ser tratado como candidato a imagem dedicada, e nao apenas parte da imagem `mono`
+- `IGEV` segue como maior risco de compatibilidade e pode exigir imagem propria
+
+Documentos complementares desta fase:
+
+- `docs/analise_initial_table_120w_full.md`
+- `docs/planejamento_completar_tabela_120w.md`
+
 ## Inventario inspecionado
 
 ### 1. Depth Anything V2
@@ -236,6 +251,10 @@ Motivo:
 - evita contaminar a imagem dos modelos mais simples;
 - facilita testes de performance e energia sem ruido de stack extra.
 
+Atualizacao:
+
+- essa separacao deixou de ser apenas recomendacao teorica e passou a ser a estrategia preferida para a proxima fase de implementacao.
+
 #### Imagem 3: stereo
 
 - Nome sugerido: `depth-jetson-stereo`
@@ -248,6 +267,11 @@ Motivo:
 - ambos usam pares left/right;
 - ambos pedem tratamento proprio de dataset;
 - `FoundationStereo` ainda pode ter variante TensorRT separada.
+
+Atualizacao:
+
+- `FoundationStereo` esta funcional nessa familia de imagem
+- `IGEV` ainda precisa de validacao real nessa mesma base antes de decidir se a compatibilidade sera mantida ou isolada
 
 #### Imagem 4 opcional: TensorRT dedicado
 

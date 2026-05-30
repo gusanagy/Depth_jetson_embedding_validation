@@ -415,6 +415,58 @@ Cada pasta de modelo inclui:
 - `command.stderr.log`
 - `tegrastats_summary.json`
 
+Observacao importante sobre a versao atual do pipeline:
+
+- o campo `samples` do `summary.csv` original vem do `tegrastats`
+- ele nao representa diretamente imagens ou pares processados
+- para throughput real, use a analise corrigida e o CSV enriquecido citados abaixo
+
+### 12. Analise local da `initial_table_120w_full`
+
+Arquivos locais gerados a partir da rodada coletada na Jetson:
+
+- `reports/initial_table/initial_table_120w_full/summary.json`
+- `reports/initial_table/initial_table_120w_full/summary.csv`
+- `reports/initial_table/initial_table_120w_full/summary_enriched.csv`
+- `reports/initial_table/initial_table_120w_full/initial_table_120w_full_plot.png`
+
+Documentos relacionados:
+
+- `docs/analise_initial_table_120w_full.md`
+- `docs/planejamento_completar_tabela_120w.md`
+
+Scripts relacionados:
+
+- `scripts/jetson/backfill_initial_table_report.py`
+- `scripts/analysis/plot_initial_table.py`
+- `scripts/analysis/generate_initial_table_latex.py`
+
+Regenerar o plot localmente:
+
+```bash
+python3 scripts/jetson/backfill_initial_table_report.py \
+  --report-root reports/initial_table/initial_table_120w_full \
+  --write-enriched-summary
+
+MPLCONFIGDIR=/tmp/mpl python3 scripts/analysis/plot_initial_table.py \
+  --summary-json reports/initial_table/initial_table_120w_full/summary_enriched.json \
+  --output reports/initial_table/initial_table_120w_full/initial_table_120w_full_plot.png \
+  --enriched-csv reports/initial_table/initial_table_120w_full/summary_enriched.csv \
+  --title "Initial Table 120W Full - Jetson Thor"
+
+python3 scripts/analysis/generate_initial_table_latex.py \
+  --input-csv reports/initial_table/initial_table_120w_full/summary_enriched.csv \
+  --output-tex reports/initial_table/initial_table_120w_full/table_publication.tex \
+  --caption "Preliminary energy and throughput results on the Jetson AGX Thor in 120W mode." \
+  --label tab:jetson_initial_120w
+```
+
+Leitura atual dessa rodada:
+
+- `Depth Anything V2` e `FoundationStereo` concluíram com dados energeticos validos
+- `Depth Anything V3`, `Depth Pro`, `Marigold` e `IGEV` ainda aparecem como `runner_pending`
+- `DA2` e `FoundationStereo` nao precisam de rerun imediato; a prioridade e completar os runners faltantes e corrigir o pipeline da tabela
+
 ## Dockerfiles incluidos
 
 ### `docker/jetson/Dockerfile.base`
@@ -468,6 +520,13 @@ Objetivo deles:
    - preview `.png`
    - metadata `.json`
 5. Medir latencia e energia usando os scripts de benchmark ja existentes em `scripts/benchmark/`.
+
+Atualizacao de `2026-05-30`:
+
+- `Depth Anything V2` e `FoundationStereo` ja tem runners funcionais e medicao em `120W`
+- `Marigold` agora deve ser tratado como candidato a container dedicado
+- `IGEV` continua sendo o maior risco de compatibilidade por causa da stack PyTorch/CUDA antiga
+- a consolidacao da tabela precisa ser corrigida para separar `telemetry_samples` de `processed_items`
 
 ## Riscos conhecidos
 

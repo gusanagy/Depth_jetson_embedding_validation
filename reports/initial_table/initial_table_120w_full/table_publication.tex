@@ -1,0 +1,20 @@
+\begin{table}[t]
+\centering
+\caption{Preliminary energy and throughput results on the Jetson AGX Thor in 120W mode.}
+\label{tab:jetson_initial_120w}
+\begin{tabular}{l l r r r r r}
+\hline
+Model & Task & Items & Time (s) & Throughput & Energy/item & Avg. Power \\
+\hline
+Depth Anything V2 & Monocular & 4225 images & 696.21 & 6.07 img/s & 8.80 J/img & 53.37 W \\
+FoundationStereo & Stereo & 276 stereo pairs & 1147.62 & 0.24 pair/s & 317.19 J/pair & 76.28 W \\
+\hline
+\end{tabular}
+\vspace{0.4em}
+
+\parbox{0.96\linewidth}{\footnotesize
+\textbf{Notes:}
+(i) the rows correspond to different tasks and dataset scopes, so they should be interpreted as an operational Jetson benchmark rather than as a final algorithmic comparison;
+(ii) throughput was recomputed from the actual number of processed outputs, not from tegrastats samples;
+(iii) FLOPs were not available in this round, so J/GFLOP could not yet be reported.}
+\end{table}

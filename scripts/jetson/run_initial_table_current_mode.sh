@@ -280,5 +280,10 @@ rows = [json.loads(line) for line in jsonl_path.read_text(encoding="utf-8").spli
 json_path.write_text(json.dumps(rows, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 PY
 
+python3 "$SCRIPT_DIR/backfill_initial_table_report.py" \
+  --report-root "$REPORT_ROOT" \
+  --write-enriched-summary
+
 echo "Summary CSV: $SUMMARY_CSV"
 echo "Summary JSON: $SUMMARY_JSON"
+echo "Summary enriched CSV: $REPORT_ROOT/summary_enriched.csv"

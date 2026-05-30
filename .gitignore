@@ -1,4 +1,5 @@
 .agents/
 .codex/
 __pycache__/
+*.pyc
 Depth_Sorriso____SIBGRAPI_2026__template_corrigido_.zip
