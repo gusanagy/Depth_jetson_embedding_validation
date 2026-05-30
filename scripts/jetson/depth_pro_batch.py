@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -59,6 +60,9 @@ def main() -> int:
 
     add_model_root(model_root)
     from depth_pro import create_model_and_transforms, load_rgb
+
+    # The upstream package resolves its default checkpoint relative to cwd.
+    os.chdir(model_root)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model, transform = create_model_and_transforms(device=device, precision=torch.half if device.type == "cuda" else torch.float32)
