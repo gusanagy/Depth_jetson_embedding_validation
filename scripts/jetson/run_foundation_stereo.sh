@@ -16,6 +16,7 @@ Options:
                           FoundationStereo/pretrained_models/vit-large/model_large_bp2.pth
   --image IMAGE           Docker image tag. Default: depth-jetson-stereo:thor-jp71
   --limit N               Optional limit for quick tests.
+  --no-progress           Disable tqdm progress bar.
 EOF
 }
 
@@ -24,6 +25,7 @@ DATASET_ROOT=""
 CKPT=""
 IMAGE="depth-jetson-stereo:thor-jp71"
 LIMIT=""
+SHOW_PROGRESS=1
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -32,6 +34,7 @@ while [[ $# -gt 0 ]]; do
     --ckpt) CKPT=$2; shift 2 ;;
     --image) IMAGE=$2; shift 2 ;;
     --limit) LIMIT=$2; shift 2 ;;
+    --no-progress) SHOW_PROGRESS=0; shift ;;
     -h|--help) usage; exit 0 ;;
     *) usage; exit 1 ;;
   esac
@@ -106,36 +109,47 @@ io = _UnavailableNamespace()
 EOF
 
 mapfile -t left_images < <(find "$LEFT_DIR" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) | sort)
-
-count=0
+total_pairs=0
 for left_img in "${left_images[@]}"; do
   filename=$(basename "$left_img")
   right_img="$RIGHT_DIR/$filename"
-  if [[ ! -f "$right_img" ]]; then
-    echo "Skipping missing pair: $filename"
-    continue
-  fi
-
-  count=$((count + 1))
-  sample_out="$OUTPUT_ROOT/${filename%.*}"
-  mkdir -p "$sample_out"
-  container_left="$CONTAINER_DATA_ROOT/left/$filename"
-  container_right="$CONTAINER_DATA_ROOT/right/$filename"
-
-  echo
-  echo "== FoundationStereo sample=$filename =="
-  "${DOCKER[@]}" run --rm --runtime=nvidia \
-    -v "$MODEL_ROOT":/workspace/model \
-    -v "$DATASET_ROOT":"$CONTAINER_DATA_ROOT" \
-    -v "$sample_out":/workspace/output \
-    -v "$SHIM_DIR":/workspace/shims:ro \
-    -v "$RUNNER_ROOT":/workspace/runner:ro \
-    -v "$CACHE_ROOT/huggingface":/workspace/cache/huggingface \
-    -v "$CACHE_ROOT/torch":/workspace/cache/torch \
-    "$IMAGE" \
-    bash -lc "cd /workspace/model && export HF_HOME=/workspace/cache/huggingface TORCH_HOME=/workspace/cache/torch && PYTHONPATH=/workspace/shims:\$PYTHONPATH python3 /workspace/runner/scripts/jetson/foundation_stereo_entrypoint.py --script /workspace/model/scripts/run_demo.py -- --left_file \"$container_left\" --right_file \"$container_right\" --ckpt_dir \"$CONTAINER_CKPT\" --out_dir /workspace/output"
-
-  if [[ -n "$LIMIT" && "$count" -ge "$LIMIT" ]]; then
-    break
+  if [[ -f "$right_img" ]]; then
+    total_pairs=$((total_pairs + 1))
   fi
 done
+
+if [[ -n "$LIMIT" && "$LIMIT" -gt 0 && "$LIMIT" -lt "$total_pairs" ]]; then
+  target_pairs="$LIMIT"
+else
+  target_pairs="$total_pairs"
+fi
+
+echo
+echo "== FoundationStereo batch =="
+echo "Dataset root: $DATASET_ROOT"
+echo "Pares encontrados: $total_pairs"
+echo "Pares a processar: $target_pairs"
+
+progress_args=()
+if [[ $SHOW_PROGRESS -eq 1 ]]; then
+  progress_args+=(--progress)
+fi
+
+limit_args=()
+if [[ -n "$LIMIT" ]]; then
+  limit_args+=(--limit "$LIMIT")
+fi
+
+"${DOCKER[@]}" run --rm --runtime=nvidia \
+  --ipc=host \
+  --ulimit memlock=-1 \
+  --ulimit stack=67108864 \
+  -v "$MODEL_ROOT":/workspace/model \
+  -v "$DATASET_ROOT":"$CONTAINER_DATA_ROOT" \
+  -v "$OUTPUT_ROOT":/workspace/output \
+  -v "$SHIM_DIR":/workspace/shims:ro \
+  -v "$RUNNER_ROOT":/workspace/runner:ro \
+  -v "$CACHE_ROOT/huggingface":/workspace/cache/huggingface \
+  -v "$CACHE_ROOT/torch":/workspace/cache/torch \
+  "$IMAGE" \
+  bash -lc "cd /workspace/model && export HF_HOME=/workspace/cache/huggingface TORCH_HOME=/workspace/cache/torch HF_HUB_DISABLE_PROGRESS_BARS=1 && PYTHONPATH=/workspace/shims:\$PYTHONPATH python3 /workspace/runner/scripts/jetson/foundation_stereo_batch.py --model-root /workspace/model --dataset-root \"$CONTAINER_DATA_ROOT\" --ckpt \"$CONTAINER_CKPT\" --out-dir /workspace/output ${limit_args[*]} ${progress_args[*]}"

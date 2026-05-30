@@ -203,16 +203,30 @@ Saidas geradas:
 - se `FoundationStereo/datasets` nao existir, usa como fallback o `uwstereo/images/val` do `IGEV`
 - usa cache persistente para Hugging Face e `torch.hub` em `~/Documents/depth_validation_workspace/cache/foundation_stereo/`
 - usa um shim de `open3d` apenas para inferencia 2D na Jetson; exportacao de nuvem de pontos continua fora desse wrapper
+- carrega o modelo uma vez por lote, em vez de abrir um `docker run` por amostra
+- mostra barra de progresso com `tqdm` por padrao; use `--no-progress` se quiser log puro
+- usa `--ipc=host`, `--ulimit memlock=-1` e `--ulimit stack=67108864` para evitar o warning de SHMEM insuficiente do PyTorch
+- reduz warnings repetitivos de `autocast` deprecado, `xFormers` ausente e logs verbosos do Hugging Face Hub
 
 ```bash
 cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
 bash scripts/jetson/run_foundation_stereo.sh
 bash scripts/jetson/run_foundation_stereo.sh --limit 4
+bash scripts/jetson/run_foundation_stereo.sh --limit 4 --no-progress
 ```
 
 Saidas geradas:
 
 - `~/Documents/depth_validation_workspace/artifacts/foundation_stereo/val/<sample_id>/`
+- `~/Documents/depth_validation_workspace/artifacts/foundation_stereo/val/batch_run_info.json`
+
+Observacoes para execucoes longas:
+
+- `FutureWarning` de `torch.cuda.amp.autocast` indica API antiga no codigo do modelo, mas nao invalida a inferencia
+- `xFormers is not available` indica perda de otimizacao, nao erro funcional
+- aviso de `HF_TOKEN` so afeta limite de download; depois que o cache aquece ele tende a sumir
+- `WARNING: CUDA Minor Version Compatibility mode ENABLED` indica desalinhamento entre driver e imagem CUDA, mas se o log mostrar `Device: cuda` e as imagens `_depth.png` estiverem sendo salvas, a execucao esta ativa
+- se a execucao for interrompida com `Ctrl+C`, o wrapper pode registrar codigo `141`; isso nao significa falha do modelo, apenas termino interrompido com resultados parciais em disco
 
 Suite inicial:
 
