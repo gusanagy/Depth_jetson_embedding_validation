@@ -6,22 +6,18 @@ ENV PIP_NO_CACHE_DIR=1
 RUN python3 -m pip install --upgrade pip setuptools wheel && \
     python3 -m pip install \
     "numpy<2" \
-    pandas \
-    matplotlib \
     pillow \
     tqdm \
     scipy \
-    einops \
-    timm \
     omegaconf \
     pyyaml \
-    huggingface_hub \
-    safetensors \
     imageio \
     opencv-python-headless \
-    requests \
-    typer \
-    addict \
-    pillow-heif
+    matplotlib \
+    huggingface_hub \
+    safetensors \
+    accelerate \
+    diffusers \
+    transformers
 
-CMD ["python3", "-c", "import cv2, numpy, pandas, torch; print({'cv2': cv2.__version__, 'torch': torch.__version__})"]
+CMD ["python3", "-c", "import diffusers, torch; print({'diffusers': diffusers.__version__, 'torch': torch.__version__})"]

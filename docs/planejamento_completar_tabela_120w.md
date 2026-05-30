@@ -24,6 +24,19 @@ Pendentes de runner Jetson:
 - `Marigold`
 - `IGEV`
 
+Atualizacao de implementacao em `2026-05-30`:
+
+- `scripts/jetson/run_depth_anything_v3.sh`
+- `scripts/jetson/run_depth_pro.sh`
+- `scripts/jetson/run_marigold.sh`
+- `scripts/jetson/run_igev.sh`
+- `scripts/jetson/run_initial_table_current_mode.sh` agora ja pode incluir esses quatro modelos nas novas rodadas
+
+Ou seja:
+
+- a pendencia deixou de ser "falta runner"
+- a pendencia passou a ser "falta validar/buildar/medir os quatro no ambiente Jetson e regenerar a tabela 120W"
+
 ## Decisao Sobre Rerun Dos Modelos Ja Concluidos
 
 ### `Depth Anything V2`
@@ -126,7 +139,7 @@ Estrategia recomendada:
 2. se falhar em import ou inferencia, criar uma imagem dedicada `depth-jetson-igev`
 3. evitar contaminar `FoundationStereo` com hacks legados de `IGEV`
 
-## Fase 3: Runners Faltantes
+## Fase 3: Runners Implementados E Validacao Pendente
 
 ### `Depth Anything V3`
 

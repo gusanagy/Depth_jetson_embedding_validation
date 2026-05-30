@@ -12,7 +12,7 @@ Options:
                          Default: nvcr.io/nvidia/pytorch:26.04-py3
   --parent-image IMAGE   Override the parent image used by mono/stereo.
                          Default: depth-jetson-base:thor-jp71
-  --only NAME            Build only one image: base, mono, stereo
+  --only NAME            Build only one image: base, mono, stereo, marigold
   --no-cache             Disable docker build cache.
   --workspace-root PATH  Default: ~/Documents/depth_validation_workspace
   -h, --help             Show help.
@@ -106,6 +106,7 @@ case "$ONLY" in
     build_one base "$REPO_ROOT/docker/jetson/Dockerfile.base" "depth-jetson-base:thor-jp71" "$BASE_IMAGE"
     build_one mono "$REPO_ROOT/docker/jetson/Dockerfile.mono" "depth-jetson-mono:thor-jp71" "$PARENT_IMAGE"
     build_one stereo "$REPO_ROOT/docker/jetson/Dockerfile.stereo" "depth-jetson-stereo:thor-jp71" "$PARENT_IMAGE"
+    build_one marigold "$REPO_ROOT/docker/jetson/Dockerfile.marigold" "depth-jetson-marigold:thor-jp71" "$PARENT_IMAGE"
     ;;
   base)
     build_one base "$REPO_ROOT/docker/jetson/Dockerfile.base" "depth-jetson-base:thor-jp71" "$BASE_IMAGE"
@@ -115,6 +116,9 @@ case "$ONLY" in
     ;;
   stereo)
     build_one stereo "$REPO_ROOT/docker/jetson/Dockerfile.stereo" "depth-jetson-stereo:thor-jp71" "$PARENT_IMAGE"
+    ;;
+  marigold)
+    build_one marigold "$REPO_ROOT/docker/jetson/Dockerfile.marigold" "depth-jetson-marigold:thor-jp71" "$PARENT_IMAGE"
     ;;
   *)
     echo "Invalid --only value: $ONLY" >&2

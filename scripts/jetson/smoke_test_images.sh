@@ -5,7 +5,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  smoke_test_images.sh [--only base|mono|stereo]
+  smoke_test_images.sh [--only base|mono|stereo|marigold]
 
 Runs lightweight import checks inside the Docker images built for the Jetson.
 EOF
@@ -62,6 +62,7 @@ case "$ONLY" in
     run_one base depth-jetson-base:thor-jp71 "python3 -c \"import torch; print({'torch': torch.__version__, 'cuda': torch.cuda.is_available()})\""
     run_one mono depth-jetson-mono:thor-jp71 "python3 -c \"import cv2, numpy, pandas, torch; print({'cv2': cv2.__version__, 'torch': torch.__version__})\""
     run_one stereo depth-jetson-stereo:thor-jp71 "python3 -c \"import cv2, timm, torch; print({'timm': timm.__version__, 'torch': torch.__version__})\""
+    run_one marigold depth-jetson-marigold:thor-jp71 "python3 -c \"import diffusers, torch; print({'diffusers': diffusers.__version__, 'torch': torch.__version__})\""
     ;;
   base)
     run_one base depth-jetson-base:thor-jp71 "python3 -c \"import torch; print({'torch': torch.__version__, 'cuda': torch.cuda.is_available()})\""
@@ -71,6 +72,9 @@ case "$ONLY" in
     ;;
   stereo)
     run_one stereo depth-jetson-stereo:thor-jp71 "python3 -c \"import cv2, timm, torch; print({'timm': timm.__version__, 'torch': torch.__version__})\""
+    ;;
+  marigold)
+    run_one marigold depth-jetson-marigold:thor-jp71 "python3 -c \"import diffusers, torch; print({'diffusers': diffusers.__version__, 'torch': torch.__version__})\""
     ;;
   *)
     echo "Invalid --only value: $ONLY" >&2

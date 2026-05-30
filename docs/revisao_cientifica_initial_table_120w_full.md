@@ -29,6 +29,11 @@ A tabela planejada tem 6 modelos, mas so 2 foram realmente executados:
 
 Os demais continuam como `runner_pending`.
 
+Atualizacao de repositorio em `2026-05-30`:
+
+- os runners de `Depth Anything V3`, `Depth Pro`, `Marigold` e `IGEV` ja foram adicionados ao repositório
+- esta revisao continua valida para a rodada historica `initial_table_120w_full`, que ainda nao foi regenerada com esses quatro modelos
+
 ### 2. Tarefas diferentes
 
 Os dois resultados concluidos nao sao diretamente equivalentes:

@@ -13,7 +13,11 @@ Options:
   --profile NAME          quick or full. Default: quick
   --da2-encoder NAME      Default: vitb
   --da2-limit N           Override quick limit for DA2
+  --da3-limit N           Override quick limit for DA3
+  --depth-pro-limit N     Override quick limit for Depth Pro
+  --marigold-limit N      Override quick limit for Marigold
   --foundation-limit N    Override quick limit for FoundationStereo
+  --igev-limit N          Override quick limit for IGEV
 EOF
 }
 
@@ -22,7 +26,11 @@ LABEL="initial_table_current_mode"
 PROFILE="quick"
 DA2_ENCODER="vitb"
 DA2_LIMIT=""
+DA3_LIMIT=""
+DEPTH_PRO_LIMIT=""
+MARIGOLD_LIMIT=""
 FOUNDATION_LIMIT=""
+IGEV_LIMIT=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -31,7 +39,11 @@ while [[ $# -gt 0 ]]; do
     --profile) PROFILE=$2; shift 2 ;;
     --da2-encoder) DA2_ENCODER=$2; shift 2 ;;
     --da2-limit) DA2_LIMIT=$2; shift 2 ;;
+    --da3-limit) DA3_LIMIT=$2; shift 2 ;;
+    --depth-pro-limit) DEPTH_PRO_LIMIT=$2; shift 2 ;;
+    --marigold-limit) MARIGOLD_LIMIT=$2; shift 2 ;;
     --foundation-limit) FOUNDATION_LIMIT=$2; shift 2 ;;
+    --igev-limit) IGEV_LIMIT=$2; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) usage; exit 1 ;;
   esac
@@ -57,17 +69,37 @@ IFS=$'\t' read -r CURRENT_MODE_ID CURRENT_MODE_NAME < <(bash "$SCRIPT_DIR/get_cu
 case "$PROFILE" in
   quick)
     DA2_LIMIT=${DA2_LIMIT:-8}
+    DA3_LIMIT=${DA3_LIMIT:-8}
+    DEPTH_PRO_LIMIT=${DEPTH_PRO_LIMIT:-8}
+    MARIGOLD_LIMIT=${MARIGOLD_LIMIT:-4}
     FOUNDATION_LIMIT=${FOUNDATION_LIMIT:-8}
+    IGEV_LIMIT=${IGEV_LIMIT:-8}
     DA2_DATASET_SCOPE="all_datasets_limit_${DA2_LIMIT}_per_dataset"
+    DA3_SCOPE="all_datasets_limit_${DA3_LIMIT}_per_dataset"
+    DEPTH_PRO_SCOPE="all_datasets_limit_${DEPTH_PRO_LIMIT}_per_dataset"
+    MARIGOLD_SCOPE="all_datasets_limit_${MARIGOLD_LIMIT}_per_dataset"
     FOUNDATION_SCOPE="uwstereo_val_limit_${FOUNDATION_LIMIT}"
+    IGEV_SCOPE="uwstereo_val_limit_${IGEV_LIMIT}"
     DA2_ARGS=(--dataset all --encoder "$DA2_ENCODER" --limit "$DA2_LIMIT")
+    DA3_ARGS=(--dataset all --limit "$DA3_LIMIT")
+    DEPTH_PRO_ARGS=(--dataset all --limit "$DEPTH_PRO_LIMIT")
+    MARIGOLD_ARGS=(--dataset all --limit "$MARIGOLD_LIMIT" --fp16)
     FOUNDATION_ARGS=(--limit "$FOUNDATION_LIMIT")
+    IGEV_ARGS=(--limit "$IGEV_LIMIT")
     ;;
   full)
     DA2_DATASET_SCOPE="all_datasets_full"
+    DA3_SCOPE="all_datasets_full"
+    DEPTH_PRO_SCOPE="all_datasets_full"
+    MARIGOLD_SCOPE="all_datasets_full"
     FOUNDATION_SCOPE="uwstereo_val_full"
+    IGEV_SCOPE="uwstereo_val_full"
     DA2_ARGS=(--dataset all --encoder "$DA2_ENCODER")
+    DA3_ARGS=(--dataset all)
+    DEPTH_PRO_ARGS=(--dataset all)
+    MARIGOLD_ARGS=(--dataset all --fp16)
     FOUNDATION_ARGS=()
+    IGEV_ARGS=()
     ;;
 esac
 
@@ -264,10 +296,53 @@ append_supported_row \
   "$REPORT_ROOT/foundation_stereo" \
   "Stereo runner uses UWStereo validation split."
 
-append_pending_row depth_anything_v3 "Depth Anything V3" "Runner Jetson ainda nao implementado."
-append_pending_row depth_pro "Depth Pro" "Runner Jetson ainda nao implementado."
-append_pending_row marigold "Marigold" "Runner Jetson ainda nao implementado."
-append_pending_row igev "IGEV" "Runner Jetson ainda nao implementado."
+run_with_energy depth_anything_v3 \
+  bash "$SCRIPT_DIR/run_depth_anything_v3.sh" \
+  --workspace-root "$WORKSPACE_ROOT" \
+  "${DA3_ARGS[@]}"
+append_supported_row \
+  depth_anything_v3 \
+  "Depth Anything V3" \
+  "$DA3_SCOPE" \
+  "$WORKSPACE_ROOT/artifacts/da3" \
+  "$REPORT_ROOT/depth_anything_v3" \
+  "Monocular runner ready on Jetson."
+
+run_with_energy depth_pro \
+  bash "$SCRIPT_DIR/run_depth_pro.sh" \
+  --workspace-root "$WORKSPACE_ROOT" \
+  "${DEPTH_PRO_ARGS[@]}"
+append_supported_row \
+  depth_pro \
+  "Depth Pro" \
+  "$DEPTH_PRO_SCOPE" \
+  "$WORKSPACE_ROOT/artifacts/depth_pro" \
+  "$REPORT_ROOT/depth_pro" \
+  "Monocular runner saves raw depth, grayscale and color outputs."
+
+run_with_energy marigold \
+  bash "$SCRIPT_DIR/run_marigold.sh" \
+  --workspace-root "$WORKSPACE_ROOT" \
+  "${MARIGOLD_ARGS[@]}"
+append_supported_row \
+  marigold \
+  "Marigold" \
+  "$MARIGOLD_SCOPE" \
+  "$WORKSPACE_ROOT/artifacts/marigold" \
+  "$REPORT_ROOT/marigold" \
+  "Diffusion-based monocular runner in dedicated container."
+
+run_with_energy igev \
+  bash "$SCRIPT_DIR/run_igev.sh" \
+  --workspace-root "$WORKSPACE_ROOT" \
+  "${IGEV_ARGS[@]}"
+append_supported_row \
+  igev \
+  "IGEV" \
+  "$IGEV_SCOPE" \
+  "$WORKSPACE_ROOT/artifacts/igev" \
+  "$REPORT_ROOT/igev" \
+  "Stereo runner uses UWStereo validation split only."
 
 python3 - "$SUMMARY_JSONL" "$SUMMARY_JSON" <<'PY'
 import json

@@ -15,6 +15,12 @@ Status observado:
   - `Marigold`
   - `IGEV`
 
+Atualizacao de repositorio em `2026-05-30`:
+
+- os quatro runners pendentes foram implementados no repositório
+- a rodada historica `initial_table_120w_full` continua parcial
+- ainda falta executar uma nova rodada `120W` para preencher essa mesma tabela com os quatro modelos restantes
+
 Os resultados brutos da Jetson foram espelhados localmente em:
 
 - `reports/initial_table/initial_table_120w_full/summary.json`

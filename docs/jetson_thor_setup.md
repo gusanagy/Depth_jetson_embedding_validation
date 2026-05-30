@@ -197,6 +197,54 @@ Saidas geradas:
 
 - `~/Documents/depth_validation_workspace/artifacts/da2/<dataset>/<encoder>/`
 
+`Depth Anything V3`:
+
+- usa a imagem `depth-jetson-mono`
+- faz fallback para os datasets do `Depth Anything V2` quando `depth-anything-3/datasets` nao estiver sincronizado
+- salva `raw/.npy`, `grayscale/.png`, `color/.png` e `batch_run_info.json`
+
+```bash
+cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
+bash scripts/jetson/run_depth_anything_v3.sh --limit 4
+bash scripts/jetson/run_depth_anything_v3.sh --dataset val_suim --model-name da3-large --limit 4
+```
+
+Saidas geradas:
+
+- `~/Documents/depth_validation_workspace/artifacts/da3/<dataset>/<variant>/`
+
+`Depth Pro`:
+
+- usa a imagem `depth-jetson-mono`
+- faz fallback para os datasets do `Depth Anything V2` quando `ml-depth-pro/datasets` nao estiver sincronizado
+- salva `raw/.npy`, `grayscale/.png`, `color/.png` e `batch_run_info.json`
+
+```bash
+cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
+bash scripts/jetson/run_depth_pro.sh --limit 4
+bash scripts/jetson/run_depth_pro.sh --dataset val_suim --limit 4
+```
+
+Saidas geradas:
+
+- `~/Documents/depth_validation_workspace/artifacts/depth_pro/<dataset>/`
+
+`Marigold`:
+
+- usa a imagem dedicada `depth-jetson-marigold`
+- faz fallback para os datasets do `Depth Anything V2` quando `Marigold/datasets` nao estiver sincronizado
+- salva `raw/.npy`, `grayscale/.png`, `color/.png` e `batch_run_info.json`
+
+```bash
+cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
+bash scripts/jetson/build_docker_images.sh --only marigold
+bash scripts/jetson/run_marigold.sh --limit 2 --fp16
+```
+
+Saidas geradas:
+
+- `~/Documents/depth_validation_workspace/artifacts/marigold/<dataset>/`
+
 `FoundationStereo`:
 
 - processa apenas `val/left` e `val/right`
@@ -219,6 +267,21 @@ Saidas geradas:
 
 - `~/Documents/depth_validation_workspace/artifacts/foundation_stereo/val/<sample_id>/`
 - `~/Documents/depth_validation_workspace/artifacts/foundation_stereo/val/batch_run_info.json`
+
+`IGEV`:
+
+- usa a imagem `depth-jetson-stereo`
+- roda apenas `uwstereo/images/val`
+- salva `raw_disparity/.npy`, `raw_depth/.npy`, `grayscale/.png`, `color/.png` e `batch_run_info.json`
+
+```bash
+cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
+bash scripts/jetson/run_igev.sh --limit 4
+```
+
+Saidas geradas:
+
+- `~/Documents/depth_validation_workspace/artifacts/igev/val/`
 
 Observacoes para execucoes longas:
 
@@ -380,8 +443,11 @@ bash scripts/jetson/run_initial_table_current_mode.sh \
 Perfil `quick`:
 
 - `Depth Anything V2`: roda `all` com `--limit 8` por dataset encontrado
+- `Depth Anything V3`: roda `all` com `--limit 8` por dataset encontrado
+- `Depth Pro`: roda `all` com `--limit 8` por dataset encontrado
+- `Marigold`: roda `all` com `--limit 4` por dataset encontrado
 - `FoundationStereo`: roda `uwstereo val` com `--limit 8`
-- `Depth Anything V3`, `Depth Pro`, `Marigold` e `IGEV`: entram na tabela como `runner_pending`
+- `IGEV`: roda `uwstereo val` com `--limit 8`
 
 Gerar uma tabela inicial completa no modo atual:
 
@@ -394,7 +460,11 @@ bash scripts/jetson/run_initial_table_current_mode.sh \
 Perfil `full`:
 
 - `Depth Anything V2`: roda todos os datasets encontrados sem `limit`
+- `Depth Anything V3`: roda todos os datasets encontrados sem `limit`
+- `Depth Pro`: roda todos os datasets encontrados sem `limit`
+- `Marigold`: roda todos os datasets encontrados sem `limit`
 - `FoundationStereo`: roda toda a validacao do `uwstereo`
+- `IGEV`: roda toda a validacao do `uwstereo`
 
 Arquivos da tabela inicial:
 
@@ -464,7 +534,8 @@ python3 scripts/analysis/generate_initial_table_latex.py \
 Leitura atual dessa rodada:
 
 - `Depth Anything V2` e `FoundationStereo` concluíram com dados energeticos validos
-- `Depth Anything V3`, `Depth Pro`, `Marigold` e `IGEV` ainda aparecem como `runner_pending`
+- a rodada historica `initial_table_120w_full` ainda mostra `Depth Anything V3`, `Depth Pro`, `Marigold` e `IGEV` como `runner_pending`
+- a partir de `2026-05-30`, o repositorio passou a incluir runners para esses quatro modelos; falta executar uma nova rodada `120W` para preencher a tabela com eles
 - `DA2` e `FoundationStereo` nao precisam de rerun imediato; a prioridade e completar os runners faltantes e corrigir o pipeline da tabela
 
 Estado dessa analise em `2026-05-30`:
@@ -494,9 +565,16 @@ Camada inicial para modelos monoculares:
 - Depth Anything V2
 - Depth Anything 3
 - Depth Pro
-- Marigold
 
 Instala dependencias Python genericas para esse grupo.
+
+### `docker/jetson/Dockerfile.marigold`
+
+Camada dedicada para:
+
+- Marigold
+
+Instala dependencias do stack `diffusers` separadas da imagem `mono`.
 
 ### `docker/jetson/Dockerfile.stereo`
 
@@ -525,17 +603,16 @@ Objetivo deles:
 3. Escolher um primeiro alvo de inferencia:
    - `Depth Anything V2` para monocular
    - `FoundationStereo` para estereo
-4. Adaptar o runner de inferencia de cada modelo para gravar:
-   - depth `.npy`
-   - preview `.png`
-   - metadata `.json`
-5. Medir latencia e energia usando os scripts de benchmark ja existentes em `scripts/benchmark/`.
+4. Rodar uma nova tabela `120W` com os seis modelos agora suportados.
+5. Medir `FLOPs` offline por modelo e recalcular `J/GFLOP`.
+6. Se necessario, rerodar a tabela final completa apos validar caches e warm-up.
 
 Atualizacao de `2026-05-30`:
 
 - `Depth Anything V2` e `FoundationStereo` ja tem runners funcionais e medicao em `120W`
-- `Marigold` agora deve ser tratado como candidato a container dedicado
-- `IGEV` continua sendo o maior risco de compatibilidade por causa da stack PyTorch/CUDA antiga
+- `Depth Anything V3`, `Depth Pro`, `Marigold` e `IGEV` agora tambem possuem runners Jetson no repositorio
+- `Marigold` passou a usar container dedicado `depth-jetson-marigold`
+- `IGEV` continua sendo o maior risco de compatibilidade por causa da stack PyTorch/CUDA antiga e merece smoke test separado na Thor
 - a consolidacao da tabela precisa ser corrigida para separar `telemetry_samples` de `processed_items`
 
 ## Riscos conhecidos

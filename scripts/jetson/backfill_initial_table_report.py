@@ -28,7 +28,23 @@ def count_foundation_items(artifacts_dir: Path) -> int | None:
     info_path = artifacts_dir / "val" / "batch_run_info.json"
     if not info_path.exists():
         return None
-    return load_json(info_path).get("processed_pairs")
+    info = load_json(info_path)
+    return info.get("processed_pairs") or info.get("processed_items")
+
+
+def count_batch_info_items(artifacts_dir: Path) -> tuple[int | None, str | None]:
+    candidates = sorted(artifacts_dir.glob("**/batch_run_info.json"))
+    if not candidates:
+        return None, None
+
+    info = load_json(candidates[0])
+    processed_items = info.get("processed_items")
+    if processed_items is None:
+        processed_items = info.get("processed_pairs")
+    processed_unit = info.get("processed_unit")
+    if processed_unit is None and info.get("processed_pairs") is not None:
+        processed_unit = "stereo_pairs"
+    return processed_items, processed_unit
 
 
 def guess_flops_g_per_item(row: dict[str, Any]) -> float | None:
@@ -73,6 +89,11 @@ def enrich_row(row: dict[str, Any]) -> dict[str, Any]:
                 if counted is not None and counted > 0:
                     processed_items = counted
                     processed_unit = "stereo_pairs"
+            else:
+                counted, counted_unit = count_batch_info_items(artifacts_dir)
+                if counted is not None and counted > 0:
+                    processed_items = counted
+                    processed_unit = counted_unit or processed_unit
 
     duration_s = row.get("duration_s")
     energy_joules = row.get("energy_joules")
