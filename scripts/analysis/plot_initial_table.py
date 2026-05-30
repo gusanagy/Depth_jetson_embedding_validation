@@ -49,11 +49,13 @@ def enrich_records(records: list[dict]) -> list[dict]:
             item["fps"] = samples / duration
         else:
             item["fps"] = None
+        item["throughput_items_s"] = item["fps"]
 
         if energy and samples:
             item["joules_per_sample"] = energy / samples
         else:
             item["joules_per_sample"] = None
+        item["joules_per_item"] = item["joules_per_sample"]
 
         if energy is not None:
             item["energy_kj"] = energy / 1000.0
@@ -90,9 +92,11 @@ def write_enriched_csv(path: Path, records: list[dict]) -> None:
         "samples",
         "duration_s",
         "fps",
+        "throughput_items_s",
         "energy_joules",
         "energy_kj",
         "joules_per_sample",
+        "joules_per_item",
         "avg_power_w",
         "peak_power_w",
         "flops_g_per_sample",
