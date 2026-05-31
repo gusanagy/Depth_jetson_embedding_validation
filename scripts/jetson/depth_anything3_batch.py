@@ -78,6 +78,12 @@ def install_optional_shims() -> None:
         sys.modules["moviepy"] = moviepy
         sys.modules["moviepy.editor"] = editor
 
+    if "trimesh" not in sys.modules:
+        sys.modules["trimesh"] = build_shim("trimesh")
+
+    if "gsplat" not in sys.modules:
+        sys.modules["gsplat"] = build_shim("gsplat")
+
 
 def list_images(input_dir: Path, limit: int) -> list[Path]:
     files = [

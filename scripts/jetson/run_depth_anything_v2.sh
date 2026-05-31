@@ -127,6 +127,9 @@ for ds in "${datasets[@]}"; do
   echo
   echo "== DA2 dataset=$ds encoder=$ENCODER input=$(basename "$input_dir") limit=$LIMIT =="
   "${DOCKER[@]}" run --rm --runtime=nvidia \
+    --ipc=host \
+    --ulimit memlock=-1 \
+    --ulimit stack=67108864 \
     "${mount_args[@]}" \
     "$IMAGE" \
     bash -lc "cd /workspace/model && python3 run.py --img-path \"$container_input_dir\" --input-size \"$INPUT_SIZE\" --encoder \"$ENCODER\" --outdir /workspace/output"

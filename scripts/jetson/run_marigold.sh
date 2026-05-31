@@ -151,6 +151,9 @@ for ds in "${datasets[@]}"; do
   echo
   echo "== Marigold dataset=$ds input=$(basename "$input_dir") limit=$LIMIT =="
   "${DOCKER[@]}" run --rm --runtime=nvidia \
+    --ipc=host \
+    --ulimit memlock=-1 \
+    --ulimit stack=67108864 \
     -v "$MODEL_ROOT":/workspace/model \
     -v "$input_dir":/workspace/input:ro \
     -v "$out_dir":/workspace/output \

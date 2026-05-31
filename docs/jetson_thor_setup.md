@@ -202,6 +202,7 @@ Saidas geradas:
 - usa a imagem `depth-jetson-mono`
 - faz fallback para os datasets do `Depth Anything V2` quando `depth-anything-3/datasets` nao estiver sincronizado
 - salva `raw/.npy`, `grayscale/.png`, `color/.png` e `batch_run_info.json`
+- instala shims locais para dependencias opcionais de exportacao 3D, como `open3d`, `pycolmap`, `plyfile`, `moviepy`, `trimesh` e `gsplat`, para nao bloquear a inferencia 2D
 
 ```bash
 cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
@@ -289,6 +290,7 @@ Observacoes para execucoes longas:
 - `xFormers is not available` indica perda de otimizacao, nao erro funcional
 - aviso de `HF_TOKEN` so afeta limite de download; depois que o cache aquece ele tende a sumir
 - `WARNING: CUDA Minor Version Compatibility mode ENABLED` indica desalinhamento entre driver e imagem CUDA, mas se o log mostrar `Device: cuda` e as imagens `_depth.png` estiverem sendo salvas, a execucao esta ativa
+- os runners monoculares agora usam `--ipc=host`, `--ulimit memlock=-1` e `--ulimit stack=67108864`, para reduzir o warning de SHMEM do PyTorch
 - se a execucao for interrompida com `Ctrl+C`, o wrapper pode registrar codigo `141`; isso nao significa falha do modelo, apenas termino interrompido com resultados parciais em disco
 
 Suite inicial:
