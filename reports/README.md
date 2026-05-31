@@ -27,3 +27,20 @@ na Jetson.
   use para artefatos historicos que fazem parte da documentacao do repositório.
 - `reports/pulled_from_jetson/...`:
   use para resultados novos, experimentais e regenerados da Jetson.
+
+## Caminhos canônicos atuais
+
+Na Jetson:
+
+- `~/Documents/depth_validation_workspace/reports/initial_table/<label>/`
+
+Nesta maquina:
+
+- `reports/pulled_from_jetson/initial_table/<label>/`
+
+Arquivos principais esperados em ambos:
+
+- `summary_enriched.csv`
+- `<label>_plot.png`
+- `table_publication.tex`
+- `report_manifest.json`

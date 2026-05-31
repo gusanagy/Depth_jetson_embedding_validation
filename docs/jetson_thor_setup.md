@@ -540,7 +540,7 @@ Isso grava:
 - `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/initial_table_120w_full_v2_plot.png`
 - `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/table_publication.tex`
 
-Para rodar na Jetson e puxar automaticamente os resultados para esta maquina:
+Para rodar a partir desta maquina local e puxar automaticamente os resultados da Jetson:
 
 ```bash
 bash scripts/jetson/run_initial_table_remote_and_pull.sh \
@@ -552,7 +552,13 @@ Esse wrapper:
 
 - executa a tabela na Jetson
 - finaliza o relatorio la
-- copia o diretorio final para `reports/initial_table/<label>/` neste repositório local
+- copia o diretorio final para `reports/pulled_from_jetson/initial_table/<label>/` neste repositório local
+
+Importante:
+
+- esse comando deve ser executado nesta maquina local, dentro deste repositório
+- ele nao deve ser executado de dentro da Jetson
+- dentro da Jetson, o comando correto para fechar o relatorio e `finalize_initial_table_report.sh`
 
 Ou seja, depois do pull automatico, nesta maquina os caminhos ficam:
 

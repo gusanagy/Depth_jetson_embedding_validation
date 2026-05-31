@@ -20,6 +20,15 @@ def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def maybe_float(value: Any) -> float | None:
+    if value in (None, "", "None"):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def count_da2_items(artifacts_dir: Path) -> int:
     return sum(1 for _ in artifacts_dir.glob("*/*/grayscale/*.png"))
 
@@ -67,6 +76,150 @@ def guess_flops_g_per_item(row: dict[str, Any]) -> float | None:
         if data.get("flops") is not None:
             return float(data["flops"]) / 1e9
     return None
+
+
+def default_dataset_scope(model_key: str, profile: str) -> str | None:
+    if profile == "quick":
+        mapping = {
+            "depth_anything_v2": "all_datasets_limit_8_per_dataset",
+            "depth_anything_v3": "all_datasets_limit_8_per_dataset",
+            "depth_pro": "all_datasets_limit_8_per_dataset",
+            "marigold": "all_datasets_limit_4_per_dataset",
+            "foundation_stereo": "uwstereo_val_limit_8",
+            "igev": "uwstereo_val_limit_8",
+        }
+    else:
+        mapping = {
+            "depth_anything_v2": "all_datasets_full",
+            "depth_anything_v3": "all_datasets_full",
+            "depth_pro": "all_datasets_full",
+            "marigold": "all_datasets_full",
+            "foundation_stereo": "uwstereo_val_full",
+            "igev": "uwstereo_val_full",
+        }
+    return mapping.get(model_key)
+
+
+def model_registry(workspace_root: str) -> list[dict[str, str]]:
+    return [
+        {
+            "model_key": "depth_anything_v2",
+            "model_name": "Depth Anything V2",
+            "artifacts_dir": f"{workspace_root}/artifacts/da2",
+        },
+        {
+            "model_key": "foundation_stereo",
+            "model_name": "FoundationStereo",
+            "artifacts_dir": f"{workspace_root}/artifacts/foundation_stereo",
+        },
+        {
+            "model_key": "depth_anything_v3",
+            "model_name": "Depth Anything V3",
+            "artifacts_dir": f"{workspace_root}/artifacts/da3",
+        },
+        {
+            "model_key": "depth_pro",
+            "model_name": "Depth Pro",
+            "artifacts_dir": f"{workspace_root}/artifacts/depth_pro",
+        },
+        {
+            "model_key": "marigold",
+            "model_name": "Marigold",
+            "artifacts_dir": f"{workspace_root}/artifacts/marigold",
+        },
+        {
+            "model_key": "igev",
+            "model_name": "IGEV",
+            "artifacts_dir": f"{workspace_root}/artifacts/igev",
+        },
+    ]
+
+
+def load_rows_from_jsonl(path: Path) -> list[dict[str, Any]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def load_rows_from_csv(path: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        for row in reader:
+            if not row.get("model_key"):
+                continue
+            for key in ("duration_s", "energy_joules", "avg_power_w", "peak_power_w", "samples"):
+                row[key] = maybe_float(row.get(key))
+            rows.append(row)
+    return rows
+
+
+def recover_rows_from_report_dirs(report_root: Path) -> list[dict[str, Any]]:
+    context = {}
+    context_path = report_root / "context.json"
+    if context_path.exists():
+        context = load_json(context_path)
+
+    workspace_root = context.get("workspace_root") or str(report_root.parents[2])
+    power_mode_id = context.get("power_mode_id")
+    power_mode_name = context.get("power_mode_name")
+    profile = context.get("profile") or "unknown"
+
+    rows: list[dict[str, Any]] = []
+    for item in model_registry(workspace_root):
+        model_key = item["model_key"]
+        report_dir = report_root / model_key
+        summary_path = report_dir / "tegrastats_summary.json"
+        if not report_dir.is_dir() or not summary_path.exists():
+            continue
+
+        summary = load_json(summary_path)
+        exit_code = summary.get("exit_code")
+        status = "completed" if exit_code in (None, 0) else "failed"
+        notes = f"Recovered from existing report directory (exit_code={exit_code})."
+
+        rows.append(
+            {
+                "model_key": model_key,
+                "model_name": item["model_name"],
+                "status": status,
+                "power_mode_id": power_mode_id,
+                "power_mode_name": power_mode_name,
+                "profile": profile,
+                "dataset_scope": default_dataset_scope(model_key, profile),
+                "duration_s": summary.get("duration_s"),
+                "energy_joules": summary.get("energy_joules"),
+                "avg_power_w": summary.get("avg_power_w"),
+                "peak_power_w": summary.get("peak_power_w"),
+                "primary_power_rail": summary.get("primary_power_rail"),
+                "samples": summary.get("samples"),
+                "artifacts_dir": item["artifacts_dir"],
+                "report_dir": str(report_dir),
+                "notes": notes,
+            }
+        )
+
+    return rows
+
+
+def load_base_rows(report_root: Path) -> list[dict[str, Any]]:
+    summary_json = report_root / "summary.json"
+    if summary_json.exists():
+        text = summary_json.read_text(encoding="utf-8").strip()
+        if text:
+            return json.loads(text)
+
+    summary_jsonl = report_root / "summary.jsonl"
+    if summary_jsonl.exists():
+        rows = load_rows_from_jsonl(summary_jsonl)
+        if rows:
+            return rows
+
+    summary_csv = report_root / "summary.csv"
+    if summary_csv.exists():
+        rows = load_rows_from_csv(summary_csv)
+        if rows:
+            return rows
+
+    return recover_rows_from_report_dirs(report_root)
 
 
 def enrich_row(row: dict[str, Any]) -> dict[str, Any]:
@@ -153,6 +306,32 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
             writer.writerow({key: row.get(key) for key in fieldnames})
 
 
+def write_base_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    fieldnames = [
+        "model_key",
+        "model_name",
+        "status",
+        "power_mode_id",
+        "power_mode_name",
+        "profile",
+        "dataset_scope",
+        "duration_s",
+        "energy_joules",
+        "avg_power_w",
+        "peak_power_w",
+        "primary_power_rail",
+        "samples",
+        "artifacts_dir",
+        "report_dir",
+        "notes",
+    ]
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({key: row.get(key) for key in fieldnames})
+
+
 def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:
@@ -162,9 +341,17 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 def main() -> int:
     args = parse_args()
     report_root = Path(args.report_root)
-    summary_json = report_root / "summary.json"
-    rows = load_json(summary_json)
+    rows = load_base_rows(report_root)
+    if not rows:
+        raise SystemExit(f"No summary rows could be recovered from {report_root}")
     enriched_rows = [enrich_row(row) for row in rows]
+
+    (report_root / "summary.json").write_text(
+        json.dumps(rows, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    write_base_csv(report_root / "summary.csv", rows)
+    write_jsonl(report_root / "summary.jsonl", rows)
 
     if args.write_enriched_summary:
         (report_root / "summary_enriched.json").write_text(
