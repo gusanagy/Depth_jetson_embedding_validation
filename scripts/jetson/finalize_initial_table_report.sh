@@ -42,6 +42,7 @@ fi
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
 REPORT_ROOT="$WORKSPACE_ROOT/reports/initial_table/$LABEL"
+MANIFEST_JSON="$REPORT_ROOT/report_manifest.json"
 
 if [[ ! -d "$REPORT_ROOT" ]]; then
   echo "Report root not found: $REPORT_ROOT" >&2
@@ -68,7 +69,30 @@ python3 "$REPO_ROOT/scripts/analysis/generate_initial_table_latex.py" \
   --caption "$CAPTION" \
   --label "$LATEX_LABEL"
 
+python3 - "$MANIFEST_JSON" "$LABEL" "$REPORT_ROOT" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1])
+label = sys.argv[2]
+report_root = Path(sys.argv[3]).resolve()
+payload = {
+    "label": label,
+    "report_root": str(report_root),
+    "summary_csv": str((report_root / "summary.csv").resolve()),
+    "summary_json": str((report_root / "summary.json").resolve()),
+    "summary_enriched_csv": str((report_root / "summary_enriched.csv").resolve()),
+    "summary_enriched_json": str((report_root / "summary_enriched.json").resolve()),
+    "summary_enriched_jsonl": str((report_root / "summary_enriched.jsonl").resolve()),
+    "plot_png": str((report_root / f"{label}_plot.png").resolve()),
+    "latex_tex": str((report_root / "table_publication.tex").resolve()),
+}
+manifest_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+
 echo "Report root: $REPORT_ROOT"
 echo "CSV: $REPORT_ROOT/summary_enriched.csv"
 echo "PNG: $REPORT_ROOT/${LABEL}_plot.png"
 echo "LaTeX: $REPORT_ROOT/table_publication.tex"
+echo "Manifest: $MANIFEST_JSON"

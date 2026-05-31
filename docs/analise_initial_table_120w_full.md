@@ -26,6 +26,11 @@ Os resultados brutos da Jetson foram espelhados localmente em:
 - `reports/initial_table/initial_table_120w_full/summary.json`
 - `reports/initial_table/initial_table_120w_full/summary.csv`
 
+Observacao de organizacao:
+
+- essa pasta em `reports/initial_table/initial_table_120w_full/` e um baseline historico versionado
+- resultados novos puxados da Jetson devem ir para `reports/pulled_from_jetson/initial_table/<label>/`
+
 ## Correcao Importante Na Leitura Da Tabela
 
 O `summary.csv` original da tabela inicial nao deve ser usado diretamente para throughput.

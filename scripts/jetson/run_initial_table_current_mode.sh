@@ -194,13 +194,14 @@ PY
   append_row "$row_json"
 }
 
-append_supported_row() {
+append_result_row() {
   local model_key=$1
   local model_name=$2
-  local dataset_scope=$3
-  local artifacts_dir=$4
-  local report_dir=$5
-  local notes=$6
+  local status=$3
+  local dataset_scope=$4
+  local artifacts_dir=$5
+  local report_dir=$6
+  local notes=$7
 
   local row_json
   row_json=$(python3 - "$report_dir/tegrastats_summary.json" <<PY
@@ -208,11 +209,14 @@ import json
 import sys
 from pathlib import Path
 
-summary = json.loads(Path(sys.argv[1]).read_text())
+summary_path = Path(sys.argv[1])
+summary = {}
+if summary_path.exists():
+    summary = json.loads(summary_path.read_text())
 print(json.dumps({
     "model_key": "$model_key",
     "model_name": "$model_name",
-    "status": "completed",
+    "status": "$status",
     "power_mode_id": "$CURRENT_MODE_ID",
     "power_mode_name": "$CURRENT_MODE_NAME",
     "profile": "$PROFILE",
@@ -232,17 +236,32 @@ PY
   append_row "$row_json"
 }
 
+append_supported_row() {
+  append_result_row "$1" "$2" completed "$3" "$4" "$5" "$6"
+}
+
+append_failed_row() {
+  append_result_row "$1" "$2" failed "$3" "$4" "$5" "$6"
+}
+
 run_with_energy() {
   local model_key=$1
   shift
   local report_dir="$REPORT_ROOT/$model_key"
   mkdir -p "$report_dir"
+  local exit_code=0
+  set +e
   bash "$REPO_ROOT/scripts/benchmark/run_with_tegrastats.sh" "$report_dir" -- "$@"
-  python3 "$REPO_ROOT/scripts/benchmark/summarize_tegrastats.py" \
-    "$report_dir/tegrastats.log" \
-    --output "$report_dir/tegrastats_summary.json"
+  exit_code=$?
+  set -e
 
-  python3 - "$report_dir/tegrastats_summary.json" "$report_dir/run_meta.json" "$CURRENT_MODE_ID" "$CURRENT_MODE_NAME" <<'PY'
+  if [[ -f "$report_dir/tegrastats.log" ]]; then
+    python3 "$REPO_ROOT/scripts/benchmark/summarize_tegrastats.py" \
+      "$report_dir/tegrastats.log" \
+      --output "$report_dir/tegrastats_summary.json"
+  fi
+
+  python3 - "$report_dir/tegrastats_summary.json" "$report_dir/run_meta.json" "$CURRENT_MODE_ID" "$CURRENT_MODE_NAME" "$exit_code" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -251,10 +270,13 @@ summary_path = Path(sys.argv[1])
 run_meta_path = Path(sys.argv[2])
 mode_id = sys.argv[3]
 mode_name = sys.argv[4]
-
-data = json.loads(summary_path.read_text())
+exit_code = int(sys.argv[5])
+data = {}
+if summary_path.exists():
+    data = json.loads(summary_path.read_text())
 data["power_mode_id"] = mode_id
 data["power_mode_name"] = mode_name
+data["exit_code"] = exit_code
 if run_meta_path.exists():
     run_meta = json.loads(run_meta_path.read_text())
     duration_s = run_meta.get("duration_s")
@@ -267,82 +289,95 @@ if run_meta_path.exists():
         data["peak_power_w"] = round(primary_power_max_mw / 1000.0, 6)
 summary_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 PY
+  return "$exit_code"
+}
+
+record_model() {
+  local model_key=$1
+  local model_name=$2
+  local dataset_scope=$3
+  local artifacts_dir=$4
+  local report_dir=$5
+  local success_notes=$6
+  local failure_notes=$7
+  shift 7
+
+  if run_with_energy "$model_key" "$@"; then
+    append_supported_row "$model_key" "$model_name" "$dataset_scope" "$artifacts_dir" "$report_dir" "$success_notes"
+  else
+    local exit_code=$?
+    append_failed_row "$model_key" "$model_name" "$dataset_scope" "$artifacts_dir" "$report_dir" "$failure_notes (exit_code=$exit_code)"
+  fi
 }
 
 echo "Current power mode: $CURRENT_MODE_ID ($CURRENT_MODE_NAME)"
 echo "Report root: $REPORT_ROOT"
 
-run_with_energy depth_anything_v2 \
-  bash "$SCRIPT_DIR/run_depth_anything_v2.sh" \
-  --workspace-root "$WORKSPACE_ROOT" \
-  "${DA2_ARGS[@]}"
-append_supported_row \
-  depth_anything_v2 \
+record_model depth_anything_v2 \
   "Depth Anything V2" \
   "$DA2_DATASET_SCOPE" \
   "$WORKSPACE_ROOT/artifacts/da2" \
   "$REPORT_ROOT/depth_anything_v2" \
-  "Monocular runner ready on Jetson."
-
-run_with_energy foundation_stereo \
-  bash "$SCRIPT_DIR/run_foundation_stereo.sh" \
+  "Monocular runner ready on Jetson." \
+  "Monocular runner failed on Jetson." \
+  bash "$SCRIPT_DIR/run_depth_anything_v2.sh" \
   --workspace-root "$WORKSPACE_ROOT" \
-  "${FOUNDATION_ARGS[@]}"
-append_supported_row \
-  foundation_stereo \
+  "${DA2_ARGS[@]}"
+
+record_model foundation_stereo \
   "FoundationStereo" \
   "$FOUNDATION_SCOPE" \
   "$WORKSPACE_ROOT/artifacts/foundation_stereo" \
   "$REPORT_ROOT/foundation_stereo" \
-  "Stereo runner uses UWStereo validation split."
-
-run_with_energy depth_anything_v3 \
-  bash "$SCRIPT_DIR/run_depth_anything_v3.sh" \
+  "Stereo runner uses UWStereo validation split." \
+  "Stereo runner failed on UWStereo validation split." \
+  bash "$SCRIPT_DIR/run_foundation_stereo.sh" \
   --workspace-root "$WORKSPACE_ROOT" \
-  "${DA3_ARGS[@]}"
-append_supported_row \
-  depth_anything_v3 \
+  "${FOUNDATION_ARGS[@]}"
+
+record_model depth_anything_v3 \
   "Depth Anything V3" \
   "$DA3_SCOPE" \
   "$WORKSPACE_ROOT/artifacts/da3" \
   "$REPORT_ROOT/depth_anything_v3" \
-  "Monocular runner ready on Jetson."
-
-run_with_energy depth_pro \
-  bash "$SCRIPT_DIR/run_depth_pro.sh" \
+  "Monocular runner ready on Jetson." \
+  "Monocular runner failed on Jetson." \
+  bash "$SCRIPT_DIR/run_depth_anything_v3.sh" \
   --workspace-root "$WORKSPACE_ROOT" \
-  "${DEPTH_PRO_ARGS[@]}"
-append_supported_row \
-  depth_pro \
+  "${DA3_ARGS[@]}"
+
+record_model depth_pro \
   "Depth Pro" \
   "$DEPTH_PRO_SCOPE" \
   "$WORKSPACE_ROOT/artifacts/depth_pro" \
   "$REPORT_ROOT/depth_pro" \
-  "Monocular runner saves raw depth, grayscale and color outputs."
-
-run_with_energy marigold \
-  bash "$SCRIPT_DIR/run_marigold.sh" \
+  "Monocular runner saves raw depth, grayscale and color outputs." \
+  "Monocular runner failed on Jetson." \
+  bash "$SCRIPT_DIR/run_depth_pro.sh" \
   --workspace-root "$WORKSPACE_ROOT" \
-  "${MARIGOLD_ARGS[@]}"
-append_supported_row \
-  marigold \
+  "${DEPTH_PRO_ARGS[@]}"
+
+record_model marigold \
   "Marigold" \
   "$MARIGOLD_SCOPE" \
   "$WORKSPACE_ROOT/artifacts/marigold" \
   "$REPORT_ROOT/marigold" \
-  "Diffusion-based monocular runner in dedicated container."
-
-run_with_energy igev \
-  bash "$SCRIPT_DIR/run_igev.sh" \
+  "Diffusion-based monocular runner in dedicated container." \
+  "Diffusion-based monocular runner failed on Jetson." \
+  bash "$SCRIPT_DIR/run_marigold.sh" \
   --workspace-root "$WORKSPACE_ROOT" \
-  "${IGEV_ARGS[@]}"
-append_supported_row \
-  igev \
+  "${MARIGOLD_ARGS[@]}"
+
+record_model igev \
   "IGEV" \
   "$IGEV_SCOPE" \
   "$WORKSPACE_ROOT/artifacts/igev" \
   "$REPORT_ROOT/igev" \
-  "Stereo runner uses UWStereo validation split only."
+  "Stereo runner uses UWStereo validation split only." \
+  "Stereo runner failed on UWStereo validation split." \
+  bash "$SCRIPT_DIR/run_igev.sh" \
+  --workspace-root "$WORKSPACE_ROOT" \
+  "${IGEV_ARGS[@]}"
 
 python3 - "$SUMMARY_JSONL" "$SUMMARY_JSON" <<'PY'
 import json

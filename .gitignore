@@ -3,3 +3,5 @@
 __pycache__/
 *.pyc
 Depth_Sorriso____SIBGRAPI_2026__template_corrigido_.zip
+reports/pulled_from_jetson/*
+!reports/pulled_from_jetson/.gitignore

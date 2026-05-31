@@ -66,7 +66,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
 LOCAL_REPO=${LOCAL_REPO:-$REPO_ROOT}
 REMOTE_REPO=${REMOTE_REPO:-$REMOTE_WORKSPACE/depth_compare_sorriso}
-LOCAL_REPORTS_DIR="$LOCAL_REPO/reports/initial_table"
+LOCAL_REPORTS_DIR="$LOCAL_REPO/reports/pulled_from_jetson/initial_table"
 LOCAL_TARGET_DIR="$LOCAL_REPORTS_DIR/$LABEL"
 
 mkdir -p "$LOCAL_REPORTS_DIR"
@@ -107,3 +107,4 @@ echo "Local report root: $LOCAL_TARGET_DIR"
 echo "CSV: $LOCAL_TARGET_DIR/summary_enriched.csv"
 echo "PNG: $LOCAL_TARGET_DIR/${LABEL}_plot.png"
 echo "LaTeX: $LOCAL_TARGET_DIR/table_publication.tex"
+echo "Manifest: $LOCAL_TARGET_DIR/report_manifest.json"

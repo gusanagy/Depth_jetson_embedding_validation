@@ -468,6 +468,13 @@ Perfil `full`:
 - `FoundationStereo`: roda toda a validacao do `uwstereo`
 - `IGEV`: roda toda a validacao do `uwstereo`
 
+Comportamento atual do runner consolidado:
+
+- se um modelo falhar, a tabela nao para imediatamente
+- o status desse modelo entra como `failed`
+- os modelos seguintes continuam
+- no fim, ainda e possivel gerar `summary_enriched`, `png` e `tex` do relatorio parcial
+
 Arquivos da tabela inicial:
 
 - `~/Documents/depth_validation_workspace/reports/initial_table/<label>/context.json`
@@ -476,6 +483,7 @@ Arquivos da tabela inicial:
 - `~/Documents/depth_validation_workspace/reports/initial_table/<label>/summary_enriched.csv`
 - `~/Documents/depth_validation_workspace/reports/initial_table/<label>/<label>_plot.png`
 - `~/Documents/depth_validation_workspace/reports/initial_table/<label>/table_publication.tex`
+- `~/Documents/depth_validation_workspace/reports/initial_table/<label>/report_manifest.json`
 
 Relatorios detalhados por modelo:
 
@@ -548,9 +556,24 @@ Esse wrapper:
 
 Ou seja, depois do pull automatico, nesta maquina os caminhos ficam:
 
-- `reports/initial_table/<label>/summary_enriched.csv`
-- `reports/initial_table/<label>/<label>_plot.png`
-- `reports/initial_table/<label>/table_publication.tex`
+- `reports/pulled_from_jetson/initial_table/<label>/summary_enriched.csv`
+- `reports/pulled_from_jetson/initial_table/<label>/<label>_plot.png`
+- `reports/pulled_from_jetson/initial_table/<label>/table_publication.tex`
+- `reports/pulled_from_jetson/initial_table/<label>/report_manifest.json`
+
+Organizacao recomendada:
+
+- na Jetson, o local canonico dos relatórios gerados em runtime e sempre:
+  - `~/Documents/depth_validation_workspace/reports/initial_table/<label>/`
+- neste repositório local, artefatos historicos versionados ficam em:
+  - `reports/initial_table/...`
+- neste repositório local, resultados novos puxados automaticamente da Jetson ficam em:
+  - `reports/pulled_from_jetson/initial_table/<label>/`
+
+Isso evita misturar:
+
+- baseline historico que faz parte da documentacao do repositório
+- resultados experimentais novos puxados da Jetson
 
 Regenerar o plot localmente:
 
