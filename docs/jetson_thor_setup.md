@@ -473,6 +473,9 @@ Arquivos da tabela inicial:
 - `~/Documents/depth_validation_workspace/reports/initial_table/<label>/context.json`
 - `~/Documents/depth_validation_workspace/reports/initial_table/<label>/summary.csv`
 - `~/Documents/depth_validation_workspace/reports/initial_table/<label>/summary.json`
+- `~/Documents/depth_validation_workspace/reports/initial_table/<label>/summary_enriched.csv`
+- `~/Documents/depth_validation_workspace/reports/initial_table/<label>/<label>_plot.png`
+- `~/Documents/depth_validation_workspace/reports/initial_table/<label>/table_publication.tex`
 
 Relatorios detalhados por modelo:
 
@@ -510,8 +513,44 @@ Documentos relacionados:
 Scripts relacionados:
 
 - `scripts/jetson/backfill_initial_table_report.py`
+- `scripts/jetson/finalize_initial_table_report.sh`
+- `scripts/jetson/run_initial_table_remote_and_pull.sh`
 - `scripts/analysis/plot_initial_table.py`
 - `scripts/analysis/generate_initial_table_latex.py`
+
+Para gerar `summary_enriched`, `png` e `tex` diretamente na Jetson depois do teste:
+
+```bash
+bash scripts/jetson/finalize_initial_table_report.sh \
+  --workspace-root ~/Documents/depth_validation_workspace \
+  --label initial_table_120w_full_v2
+```
+
+Isso grava:
+
+- `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/summary_enriched.csv`
+- `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/initial_table_120w_full_v2_plot.png`
+- `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/table_publication.tex`
+
+Para rodar na Jetson e puxar automaticamente os resultados para esta maquina:
+
+```bash
+bash scripts/jetson/run_initial_table_remote_and_pull.sh \
+  --label initial_table_120w_full_v2 \
+  --profile full
+```
+
+Esse wrapper:
+
+- executa a tabela na Jetson
+- finaliza o relatorio la
+- copia o diretorio final para `reports/initial_table/<label>/` neste repositório local
+
+Ou seja, depois do pull automatico, nesta maquina os caminhos ficam:
+
+- `reports/initial_table/<label>/summary_enriched.csv`
+- `reports/initial_table/<label>/<label>_plot.png`
+- `reports/initial_table/<label>/table_publication.tex`
 
 Regenerar o plot localmente:
 
