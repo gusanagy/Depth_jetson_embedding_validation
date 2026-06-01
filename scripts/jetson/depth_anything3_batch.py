@@ -85,6 +85,33 @@ def install_optional_shims() -> None:
         sys.modules["gsplat"] = build_shim("gsplat")
 
 
+def install_export_shim() -> None:
+    import types
+
+    module_name = "depth_anything_3.utils.export"
+    if module_name in sys.modules:
+        return
+
+    export_module = types.ModuleType(module_name)
+
+    def _noop_export(*args, **kwargs):
+        return None
+
+    export_module.export = _noop_export
+    export_module.export_to_colmap = _noop_export
+    export_module.export_to_glb = _noop_export
+    export_module.export_to_gs_ply = _noop_export
+    export_module.export_to_gs_video = _noop_export
+    export_module.__all__ = [
+        "export",
+        "export_to_colmap",
+        "export_to_glb",
+        "export_to_gs_ply",
+        "export_to_gs_video",
+    ]
+    sys.modules[module_name] = export_module
+
+
 def list_images(input_dir: Path, limit: int) -> list[Path]:
     files = [
         path
@@ -121,6 +148,7 @@ def main() -> int:
     color_dir.mkdir(exist_ok=True)
 
     install_optional_shims()
+    install_export_shim()
     add_model_root(model_root)
 
     from depth_anything_3.api import DepthAnything3

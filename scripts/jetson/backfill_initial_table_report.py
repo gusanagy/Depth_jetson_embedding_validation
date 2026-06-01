@@ -78,6 +78,12 @@ def guess_flops_g_per_item(row: dict[str, Any]) -> float | None:
     return None
 
 
+def infer_task_family(model_key: str | None, processed_unit: str | None) -> str:
+    if processed_unit == "stereo_pairs" or model_key in {"foundation_stereo", "igev"}:
+        return "stereo"
+    return "monocular"
+
+
 def default_dataset_scope(model_key: str, profile: str) -> str | None:
     if profile == "quick":
         mapping = {
@@ -269,6 +275,7 @@ def enrich_row(row: dict[str, Any]) -> dict[str, Any]:
     enriched["processed_unit"] = processed_unit
     enriched["throughput_items_s"] = throughput_items_s
     enriched["joules_per_item"] = joules_per_item
+    enriched["task_family"] = infer_task_family(model_key, processed_unit)
     enriched["flops_g_per_item"] = flops_g_per_item
     enriched["jgflops"] = jgflops
     return enriched
@@ -282,6 +289,7 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "power_mode_id",
         "power_mode_name",
         "profile",
+        "task_family",
         "dataset_scope",
         "duration_s",
         "energy_joules",

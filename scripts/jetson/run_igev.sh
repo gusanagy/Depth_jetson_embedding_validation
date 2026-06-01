@@ -44,6 +44,7 @@ done
 
 MODEL_ROOT="$WORKSPACE_ROOT/external_models/IGEV/IGEV-Stereo"
 OUTPUT_ROOT="$WORKSPACE_ROOT/artifacts/igev/val"
+CACHE_ROOT="$WORKSPACE_ROOT/cache/igev"
 
 if [[ -z "$DATASET_ROOT" ]]; then
   DATASET_ROOT="$MODEL_ROOT/uwstereo/images/val"
@@ -85,6 +86,7 @@ else
 fi
 
 mkdir -p "$OUTPUT_ROOT"
+mkdir -p "$CACHE_ROOT/huggingface" "$CACHE_ROOT/torch"
 
 progress_arg=()
 if [[ $SHOW_PROGRESS -eq 0 ]]; then
@@ -104,9 +106,14 @@ fi
 echo
 echo "== IGEV stereo val limit=$LIMIT =="
 "${DOCKER[@]}" run --rm --runtime=nvidia \
+  --ipc=host \
+  --ulimit memlock=-1 \
+  --ulimit stack=67108864 \
   -v "$MODEL_ROOT":/workspace/model \
   -v "$DATASET_ROOT":/workspace/data:ro \
   -v "$OUTPUT_ROOT":/workspace/output \
   -v "$WORKSPACE_ROOT/depth_compare_sorriso":/workspace/runner:ro \
+  -v "$CACHE_ROOT/huggingface":/workspace/cache/huggingface \
+  -v "$CACHE_ROOT/torch":/workspace/cache/torch \
   "$IMAGE" \
-  bash -lc "cd /workspace/model && PYTHONPATH=/workspace/model:/workspace/model/core:\$PYTHONPATH python3 /workspace/runner/scripts/jetson/igev_batch.py --model-root /workspace/model --left-dir /workspace/data/left --right-dir /workspace/data/right --output-dir /workspace/output --ckpt \"$CONTAINER_CKPT\" ${limit_arg[*]} ${mp_arg[*]} ${progress_arg[*]}"
+  bash -lc "cd /workspace/model && export HF_HOME=/workspace/cache/huggingface TORCH_HOME=/workspace/cache/torch PYTHONPATH=/workspace/model:/workspace/model/core:\$PYTHONPATH && python3 /workspace/runner/scripts/jetson/igev_batch.py --model-root /workspace/model --left-dir /workspace/data/left --right-dir /workspace/data/right --output-dir /workspace/output --ckpt \"$CONTAINER_CKPT\" ${limit_arg[*]} ${mp_arg[*]} ${progress_arg[*]}"

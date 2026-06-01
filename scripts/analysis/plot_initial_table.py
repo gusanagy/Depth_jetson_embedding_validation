@@ -23,11 +23,31 @@ def parse_args() -> argparse.Namespace:
         default="Initial Table Overview",
         help="Figure title",
     )
+    parser.add_argument(
+        "--task-filter",
+        choices=("all", "monocular", "stereo"),
+        default="all",
+        help="Restrict the report to one task family while preserving the combined format by default.",
+    )
     return parser.parse_args()
 
 
 def load_records(path: Path) -> list[dict]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def infer_task_family(row: dict) -> str:
+    unit = row.get("processed_unit")
+    model_key = row.get("model_key")
+    if unit == "stereo_pairs" or model_key in {"foundation_stereo", "igev"}:
+        return "stereo"
+    return "monocular"
+
+
+def filter_records(records: list[dict], task_filter: str) -> list[dict]:
+    if task_filter == "all":
+        return records
+    return [row for row in records if infer_task_family(row) == task_filter]
 
 
 def enrich_records(records: list[dict]) -> list[dict]:
@@ -62,10 +82,15 @@ def enrich_records(records: list[dict]) -> list[dict]:
         else:
             item["energy_kj"] = None
 
-        item["flops_g_per_sample"] = row.get("flops_g_per_sample")
+        flops = row.get("flops_g_per_item")
+        if flops is None:
+            flops = row.get("flops_g_per_sample")
+        item["flops_g_per_item"] = flops
+        item["flops_g_per_sample"] = flops
         item["jgflops"] = None
-        if item["flops_g_per_sample"] and item["joules_per_sample"]:
-            item["jgflops"] = item["joules_per_sample"] / item["flops_g_per_sample"]
+        if item["flops_g_per_item"] and item["joules_per_sample"]:
+            item["jgflops"] = item["joules_per_sample"] / item["flops_g_per_item"]
+        item["task_family"] = infer_task_family(item)
 
         enriched.append(item)
 
@@ -85,6 +110,7 @@ def write_enriched_csv(path: Path, records: list[dict]) -> None:
         "status",
         "power_mode_name",
         "profile",
+        "task_family",
         "dataset_scope",
         "processed_items",
         "processed_unit",
@@ -99,6 +125,7 @@ def write_enriched_csv(path: Path, records: list[dict]) -> None:
         "joules_per_item",
         "avg_power_w",
         "peak_power_w",
+        "flops_g_per_item",
         "flops_g_per_sample",
         "jgflops",
         "notes",
@@ -122,7 +149,8 @@ def build_table(ax, records: list[dict]) -> None:
         "Energia/item (J)",
         "Pot. media (W)",
         "Pico (W)",
-        "FLOPs/img",
+        "GFLOPs/item",
+        "J/GFLOP",
     ]
 
     rows = []
@@ -138,7 +166,8 @@ def build_table(ax, records: list[dict]) -> None:
                 fmt(row.get("joules_per_sample")),
                 fmt(row.get("avg_power_w")),
                 fmt(row.get("peak_power_w")),
-                fmt(row.get("flops_g_per_sample")),
+                fmt(row.get("flops_g_per_item")),
+                fmt(row.get("jgflops")),
             ]
         )
         if row["status"] == "completed":
@@ -169,6 +198,11 @@ def build_table(ax, records: list[dict]) -> None:
 
 
 def plot_metric_bar(ax, rows: list[dict], key: str, title: str, ylabel: str, color: str) -> None:
+    if not rows:
+        ax.axis("off")
+        ax.text(0.5, 0.5, "Sem modelos concluídos\nneste recorte.", ha="center", va="center", fontsize=11)
+        return
+
     names = [row["model_name"] for row in rows]
     values = [row[key] for row in rows]
     bars = ax.bar(names, values, color=color)
@@ -197,11 +231,11 @@ def plot_flops_panel(ax, records: list[dict]) -> None:
     for row in records:
         if row["status"] != "completed":
             continue
-        flops = row.get("flops_g_per_sample")
+        flops = row.get("flops_g_per_item")
         if flops is None:
             missing.append(row["model_name"])
         else:
-            lines.append(f"{row['model_name']}: {flops:.2f} GFLOPs/img")
+            lines.append(f"{row['model_name']}: {flops:.2f} GFLOPs/item")
 
     if not lines:
         text = (
@@ -216,7 +250,8 @@ def plot_flops_panel(ax, records: list[dict]) -> None:
     text += (
         "\n\nObs. de throughput:\n"
         "- DA2: imagens/s usando contagem real de artefatos.\n"
-        "- FoundationStereo: pares/s usando batch_run_info.json."
+        "- Stereo: pares/s usando batch_run_info.json.\n"
+        "- GFLOPs e J/GFLOP dependem de probes específicos por modelo."
     )
 
     ax.text(
@@ -237,6 +272,7 @@ def main() -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     records = enrich_records(load_records(summary_path))
+    records = filter_records(records, args.task_filter)
     completed = [row for row in records if row["status"] == "completed"]
 
     fig = plt.figure(figsize=(17, 10))

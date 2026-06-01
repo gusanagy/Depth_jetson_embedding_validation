@@ -52,6 +52,12 @@ fi
 TITLE=${TITLE:-"Initial Table - $LABEL"}
 CAPTION=${CAPTION:-"Preliminary energy and throughput results on the Jetson AGX Thor for report $LABEL."}
 LATEX_LABEL=${LATEX_LABEL:-"tab:${LABEL//-/_}"}
+MONO_TITLE="${TITLE} - Monocular"
+STEREO_TITLE="${TITLE} - Stereo"
+MONO_CAPTION="Monocular subset of the Jetson AGX Thor benchmark for report $LABEL."
+STEREO_CAPTION="Stereo subset of the Jetson AGX Thor benchmark for report $LABEL."
+MONO_LATEX_LABEL="${LATEX_LABEL}:monocular"
+STEREO_LATEX_LABEL="${LATEX_LABEL}:stereo"
 
 python3 "$REPO_ROOT/scripts/jetson/backfill_initial_table_report.py" \
   --report-root "$REPORT_ROOT" \
@@ -69,6 +75,36 @@ python3 "$REPO_ROOT/scripts/analysis/generate_initial_table_latex.py" \
   --caption "$CAPTION" \
   --label "$LATEX_LABEL"
 
+python3 "$REPO_ROOT/scripts/analysis/split_initial_table_summary.py" \
+  --input-json "$REPORT_ROOT/summary_enriched.json" \
+  --output-dir "$REPORT_ROOT"
+
+MPLCONFIGDIR=/tmp/mpl python3 "$REPO_ROOT/scripts/analysis/plot_initial_table.py" \
+  --summary-json "$REPORT_ROOT/summary_monocular_enriched.json" \
+  --output "$REPORT_ROOT/${LABEL}_monocular_plot.png" \
+  --enriched-csv "$REPORT_ROOT/summary_monocular_enriched.csv" \
+  --title "$MONO_TITLE"
+
+MPLCONFIGDIR=/tmp/mpl python3 "$REPO_ROOT/scripts/analysis/plot_initial_table.py" \
+  --summary-json "$REPORT_ROOT/summary_stereo_enriched.json" \
+  --output "$REPORT_ROOT/${LABEL}_stereo_plot.png" \
+  --enriched-csv "$REPORT_ROOT/summary_stereo_enriched.csv" \
+  --title "$STEREO_TITLE"
+
+python3 "$REPO_ROOT/scripts/analysis/generate_initial_table_latex.py" \
+  --input-csv "$REPORT_ROOT/summary_monocular_enriched.csv" \
+  --output-tex "$REPORT_ROOT/table_publication_monocular.tex" \
+  --caption "$MONO_CAPTION" \
+  --label "$MONO_LATEX_LABEL" \
+  --task-filter monocular
+
+python3 "$REPO_ROOT/scripts/analysis/generate_initial_table_latex.py" \
+  --input-csv "$REPORT_ROOT/summary_stereo_enriched.csv" \
+  --output-tex "$REPORT_ROOT/table_publication_stereo.tex" \
+  --caption "$STEREO_CAPTION" \
+  --label "$STEREO_LATEX_LABEL" \
+  --task-filter stereo
+
 python3 - "$MANIFEST_JSON" "$LABEL" "$REPORT_ROOT" <<'PY'
 import json
 import sys
@@ -85,8 +121,18 @@ payload = {
     "summary_enriched_csv": str((report_root / "summary_enriched.csv").resolve()),
     "summary_enriched_json": str((report_root / "summary_enriched.json").resolve()),
     "summary_enriched_jsonl": str((report_root / "summary_enriched.jsonl").resolve()),
+    "summary_monocular_enriched_csv": str((report_root / "summary_monocular_enriched.csv").resolve()),
+    "summary_monocular_enriched_json": str((report_root / "summary_monocular_enriched.json").resolve()),
+    "summary_monocular_enriched_jsonl": str((report_root / "summary_monocular_enriched.jsonl").resolve()),
+    "summary_stereo_enriched_csv": str((report_root / "summary_stereo_enriched.csv").resolve()),
+    "summary_stereo_enriched_json": str((report_root / "summary_stereo_enriched.json").resolve()),
+    "summary_stereo_enriched_jsonl": str((report_root / "summary_stereo_enriched.jsonl").resolve()),
     "plot_png": str((report_root / f"{label}_plot.png").resolve()),
+    "plot_monocular_png": str((report_root / f"{label}_monocular_plot.png").resolve()),
+    "plot_stereo_png": str((report_root / f"{label}_stereo_plot.png").resolve()),
     "latex_tex": str((report_root / "table_publication.tex").resolve()),
+    "latex_monocular_tex": str((report_root / "table_publication_monocular.tex").resolve()),
+    "latex_stereo_tex": str((report_root / "table_publication_stereo.tex").resolve()),
 }
 manifest_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 PY
@@ -95,4 +141,10 @@ echo "Report root: $REPORT_ROOT"
 echo "CSV: $REPORT_ROOT/summary_enriched.csv"
 echo "PNG: $REPORT_ROOT/${LABEL}_plot.png"
 echo "LaTeX: $REPORT_ROOT/table_publication.tex"
+echo "Monocular CSV: $REPORT_ROOT/summary_monocular_enriched.csv"
+echo "Monocular PNG: $REPORT_ROOT/${LABEL}_monocular_plot.png"
+echo "Monocular LaTeX: $REPORT_ROOT/table_publication_monocular.tex"
+echo "Stereo CSV: $REPORT_ROOT/summary_stereo_enriched.csv"
+echo "Stereo PNG: $REPORT_ROOT/${LABEL}_stereo_plot.png"
+echo "Stereo LaTeX: $REPORT_ROOT/table_publication_stereo.tex"
 echo "Manifest: $MANIFEST_JSON"

@@ -1,12 +1,11 @@
 \begin{table}[t]
 \centering
-\caption{Preliminary energy and throughput results on the Jetson AGX Thor for report initial_table_120w_full.}
-\label{tab:initial_table_120w_full}
+\caption{Stereo subset of the Jetson AGX Thor benchmark for report initial_table_120w_full.}
+\label{tab:initial_table_120w_full:stereo}
 \begin{tabular}{l l r r r r r r r}
 \hline
 Model & Family & Items & Time (s) & Throughput & Energy/item & Avg. Power & GFLOPs/item & J/GFLOP \\
 \hline
-Depth Anything V2 & Monocular & 4225 images & 696.21 & 6.07 img/s & 8.80 J/img & 53.37 W & N/D & N/D \\
 FoundationStereo & Stereo & 276 stereo pairs & 1147.62 & 0.24 pair/s & 317.19 J/pair & 76.28 W & N/D & N/D \\
 \hline
 \end{tabular}
@@ -14,7 +13,7 @@ FoundationStereo & Stereo & 276 stereo pairs & 1147.62 & 0.24 pair/s & 317.19 J/
 
 \parbox{0.96\linewidth}{\footnotesize
 \textbf{Notes:}
-(i) this table corresponds to the mixed subset of the Jetson benchmark;
+(i) this table corresponds to the stereo subset of the Jetson benchmark;
 (ii) throughput was recomputed from the actual number of processed outputs, not from tegrastats samples;
 (iii) GFLOPs and J/GFLOP remain as N/D until the per-model FLOPs probes are executed.}
 \end{table}

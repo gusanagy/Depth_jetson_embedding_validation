@@ -43,4 +43,10 @@ Arquivos principais esperados em ambos:
 - `summary_enriched.csv`
 - `<label>_plot.png`
 - `table_publication.tex`
+- `summary_monocular_enriched.csv`
+- `<label>_monocular_plot.png`
+- `table_publication_monocular.tex`
+- `summary_stereo_enriched.csv`
+- `<label>_stereo_plot.png`
+- `table_publication_stereo.tex`
 - `report_manifest.json`

@@ -525,6 +525,7 @@ Scripts relacionados:
 - `scripts/jetson/run_initial_table_remote_and_pull.sh`
 - `scripts/analysis/plot_initial_table.py`
 - `scripts/analysis/generate_initial_table_latex.py`
+- `scripts/analysis/split_initial_table_summary.py`
 
 Para gerar `summary_enriched`, `png` e `tex` diretamente na Jetson depois do teste:
 
@@ -539,6 +540,12 @@ Isso grava:
 - `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/summary_enriched.csv`
 - `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/initial_table_120w_full_v2_plot.png`
 - `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/table_publication.tex`
+- `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/summary_monocular_enriched.csv`
+- `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/initial_table_120w_full_v2_monocular_plot.png`
+- `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/table_publication_monocular.tex`
+- `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/summary_stereo_enriched.csv`
+- `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/initial_table_120w_full_v2_stereo_plot.png`
+- `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/table_publication_stereo.tex`
 
 Para rodar a partir desta maquina local e puxar automaticamente os resultados da Jetson:
 
@@ -565,6 +572,12 @@ Ou seja, depois do pull automatico, nesta maquina os caminhos ficam:
 - `reports/pulled_from_jetson/initial_table/<label>/summary_enriched.csv`
 - `reports/pulled_from_jetson/initial_table/<label>/<label>_plot.png`
 - `reports/pulled_from_jetson/initial_table/<label>/table_publication.tex`
+- `reports/pulled_from_jetson/initial_table/<label>/summary_monocular_enriched.csv`
+- `reports/pulled_from_jetson/initial_table/<label>/<label>_monocular_plot.png`
+- `reports/pulled_from_jetson/initial_table/<label>/table_publication_monocular.tex`
+- `reports/pulled_from_jetson/initial_table/<label>/summary_stereo_enriched.csv`
+- `reports/pulled_from_jetson/initial_table/<label>/<label>_stereo_plot.png`
+- `reports/pulled_from_jetson/initial_table/<label>/table_publication_stereo.tex`
 - `reports/pulled_from_jetson/initial_table/<label>/report_manifest.json`
 
 Organizacao recomendada:
@@ -600,6 +613,21 @@ python3 scripts/analysis/generate_initial_table_latex.py \
   --caption "Preliminary energy and throughput results on the Jetson AGX Thor in 120W mode." \
   --label tab:jetson_initial_120w
 ```
+
+Separacao mono/stereo na finalizacao:
+
+- a finalizacao preserva a tabela combinada antiga
+- alem dela, agora tambem gera uma tabela monocular e outra stereo
+- isso evita misturar tarefas diferentes no mesmo quadro principal do texto cientifico
+
+Arquivos adicionais gerados por rodada:
+
+- `summary_monocular_enriched.json/csv/jsonl`
+- `summary_stereo_enriched.json/csv/jsonl`
+- `<label>_monocular_plot.png`
+- `<label>_stereo_plot.png`
+- `table_publication_monocular.tex`
+- `table_publication_stereo.tex`
 
 Leitura atual dessa rodada:
 
@@ -684,6 +712,12 @@ Atualizacao de `2026-05-30`:
 - `Marigold` passou a usar container dedicado `depth-jetson-marigold`
 - `IGEV` continua sendo o maior risco de compatibilidade por causa da stack PyTorch/CUDA antiga e merece smoke test separado na Thor
 - a consolidacao da tabela precisa ser corrigida para separar `telemetry_samples` de `processed_items`
+
+Atualizacao de `2026-06-01`:
+
+- `DA3` passou a usar um shim local de `depth_anything_3.utils.export` para evitar que a stack de exportacao 3D bloqueie a inferencia 2D
+- `IGEV` passou a aplicar um patch local e conservador em `timm.create_model` para tentar restaurar a interface esperada pelo backbone `mobilenetv2_100`
+- os relatórios finalizados agora geram saidas separadas para `monocular` e `stereo`, em `CSV`, `JSON`, `PNG` e `LaTeX`
 
 ## Riscos conhecidos
 

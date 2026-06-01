@@ -74,6 +74,28 @@ def normalize_depth(depth: np.ndarray) -> np.ndarray:
     return np.clip((depth - d_min) / (d_max - d_min + 1e-8), 0.0, 1.0)
 
 
+def patch_timm_for_igev() -> None:
+    import timm
+
+    if getattr(timm, "_igev_create_model_patched", False):
+        return
+
+    original_create_model = timm.create_model
+
+    def patched_create_model(model_name, *args, **kwargs):
+        if model_name == "mobilenetv2_100" and kwargs.get("features_only"):
+            patched_kwargs = dict(kwargs)
+            patched_kwargs.pop("features_only", None)
+            patched_kwargs.pop("out_indices", None)
+            return original_create_model(model_name, *args, **patched_kwargs)
+        return original_create_model(model_name, *args, **kwargs)
+
+    timm.create_model = patched_create_model
+    if hasattr(timm, "models") and hasattr(timm.models, "create_model"):
+        timm.models.create_model = patched_create_model
+    timm._igev_create_model_patched = True
+
+
 def main() -> int:
     args = parse_args()
     model_root = Path(args.model_root)
@@ -86,6 +108,7 @@ def main() -> int:
         path.mkdir(parents=True, exist_ok=True)
 
     add_model_root(model_root)
+    patch_timm_for_igev()
     from igev_stereo import IGEVStereo
     from utils.utils import InputPadder
 
