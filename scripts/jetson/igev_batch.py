@@ -76,6 +76,7 @@ def normalize_depth(depth: np.ndarray) -> np.ndarray:
 
 def patch_timm_for_igev() -> None:
     import timm
+    import torch.nn as nn
 
     if getattr(timm, "_igev_create_model_patched", False):
         return
@@ -87,7 +88,12 @@ def patch_timm_for_igev() -> None:
             patched_kwargs = dict(kwargs)
             patched_kwargs.pop("features_only", None)
             patched_kwargs.pop("out_indices", None)
-            return original_create_model(model_name, *args, **patched_kwargs)
+            model = original_create_model(model_name, *args, **patched_kwargs)
+            if not hasattr(model, "act1"):
+                # Newer timm exposes a plain EfficientNet/MobileNetV2-style model
+                # without the top-level activation expected by the original IGEV code.
+                model.act1 = nn.ReLU6(inplace=False)
+            return model
         return original_create_model(model_name, *args, **kwargs)
 
     timm.create_model = patched_create_model

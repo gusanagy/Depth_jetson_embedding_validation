@@ -112,6 +112,30 @@ def install_export_shim() -> None:
     sys.modules[module_name] = export_module
 
 
+def install_evo_shim() -> None:
+    import types
+
+    if "evo.core.trajectory" in sys.modules:
+        return
+
+    evo_module = types.ModuleType("evo")
+    core_module = types.ModuleType("evo.core")
+    trajectory_module = types.ModuleType("evo.core.trajectory")
+
+    class PosePath3D:  # pragma: no cover - import compatibility shim
+        def __init__(self, *args, **kwargs):
+            self.args = args
+            self.kwargs = kwargs
+
+    trajectory_module.PosePath3D = PosePath3D
+    core_module.trajectory = trajectory_module
+    evo_module.core = core_module
+
+    sys.modules["evo"] = evo_module
+    sys.modules["evo.core"] = core_module
+    sys.modules["evo.core.trajectory"] = trajectory_module
+
+
 def list_images(input_dir: Path, limit: int) -> list[Path]:
     files = [
         path
@@ -149,6 +173,7 @@ def main() -> int:
 
     install_optional_shims()
     install_export_shim()
+    install_evo_shim()
     add_model_root(model_root)
 
     from depth_anything_3.api import DepthAnything3
