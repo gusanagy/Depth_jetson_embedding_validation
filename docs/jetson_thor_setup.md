@@ -218,6 +218,15 @@ Saidas geradas:
 
 - `~/Documents/depth_validation_workspace/artifacts/da3/<dataset>/<variant>/`
 
+FLOPs do `Depth Anything V3`:
+
+```bash
+bash scripts/jetson/run_depth_anything_v3_flops.sh \
+  --workspace-root ~/Documents/depth_validation_workspace \
+  --dataset val_suim \
+  --output-json ~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v4/depth_anything_v3/flops.json
+```
+
 `Depth Pro`:
 
 - usa a imagem `depth-jetson-mono`
@@ -287,6 +296,14 @@ bash scripts/jetson/run_igev.sh --limit 4
 Saidas geradas:
 
 - `~/Documents/depth_validation_workspace/artifacts/igev/val/`
+
+FLOPs do `IGEV`:
+
+```bash
+bash scripts/jetson/run_igev_flops.sh \
+  --workspace-root ~/Documents/depth_validation_workspace \
+  --output-json ~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v4/igev/flops.json
+```
 
 Observacoes para execucoes longas:
 
@@ -550,6 +567,26 @@ Isso grava:
 - `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/summary_stereo_enriched.csv`
 - `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/initial_table_120w_full_v2_stereo_plot.png`
 - `~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v2/table_publication_stereo.tex`
+
+Se voce adicionar `flops.json` em qualquer pasta de modelo, por exemplo:
+
+- `~/Documents/depth_validation_workspace/reports/initial_table/<label>/depth_anything_v3/flops.json`
+- `~/Documents/depth_validation_workspace/reports/initial_table/<label>/igev/flops.json`
+
+basta rerodar:
+
+```bash
+bash scripts/jetson/finalize_initial_table_report.sh \
+  --workspace-root ~/Documents/depth_validation_workspace \
+  --label <label>
+```
+
+Isso atualiza os campos:
+
+- `flops_g_per_item`
+- `jgflops`
+
+sem precisar repetir a medicao de energia.
 
 Para rodar a partir desta maquina local e puxar automaticamente os resultados da Jetson:
 
