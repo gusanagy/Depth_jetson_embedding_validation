@@ -12,6 +12,9 @@ Options:
   --dataset NAME          Dataset name under the chosen dataset root. Default: all
   --dataset-root PATH     Override dataset root. Default: DA3 datasets fallback to DA2 datasets
   --model-name NAME       Default: da3-large
+                          Alias suportado automaticamente para Hugging Face:
+                          da3-small, da3-base, da3-large, da3-giant,
+                          da3mono-large, da3metric-large, da3nested-giant-large
   --model-ref REF         Optional local checkpoint directory or HF repo id override
   --process-res N         Default: 504
   --limit N               Optional image limit.

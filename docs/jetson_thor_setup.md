@@ -203,6 +203,7 @@ Saidas geradas:
 - faz fallback para os datasets do `Depth Anything V2` quando `depth-anything-3/datasets` nao estiver sincronizado
 - tenta resolver checkpoint local automaticamente dentro de `external_models/depth-anything-3`
 - aceita `--model-ref` para apontar um diretorio local de pesos ou um repo id explicito
+- quando nao encontra pesos locais, mapeia aliases como `da3-large` para o repo id correto no Hugging Face, por exemplo `depth-anything/DA3-LARGE`
 - salva `raw/.npy`, `grayscale/.png`, `color/.png` e `batch_run_info.json`
 - instala shims locais para dependencias opcionais de exportacao 3D, como `open3d`, `pycolmap`, `plyfile`, `moviepy`, `trimesh` e `gsplat`, para nao bloquear a inferencia 2D
 

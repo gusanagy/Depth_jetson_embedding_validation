@@ -158,11 +158,24 @@ def normalize_depth(depth: np.ndarray) -> np.ndarray:
     return np.clip(norm, 0.0, 1.0)
 
 
+def default_model_alias(model_name: str) -> str:
+    alias_map = {
+        "da3-small": "depth-anything/DA3-SMALL",
+        "da3-base": "depth-anything/DA3-BASE",
+        "da3-large": "depth-anything/DA3-LARGE",
+        "da3-giant": "depth-anything/DA3-GIANT",
+        "da3mono-large": "depth-anything/DA3MONO-LARGE",
+        "da3metric-large": "depth-anything/DA3METRIC-LARGE",
+        "da3nested-giant-large": "depth-anything/DA3NESTED-GIANT-LARGE",
+    }
+    return alias_map.get(model_name, model_name)
+
+
 def load_model(model_name: str, model_ref: str, device: str):
     from depth_anything_3.api import DepthAnything3
     from huggingface_hub.errors import RepositoryNotFoundError
 
-    load_ref = model_ref or model_name
+    load_ref = model_ref or default_model_alias(model_name)
     try:
         return DepthAnything3.from_pretrained(load_ref).to(device), load_ref
     except RepositoryNotFoundError as exc:
@@ -171,7 +184,8 @@ def load_model(model_name: str, model_ref: str, device: str):
         raise SystemExit(
             "Nao foi possivel resolver o modelo do DA3 no Hugging Face. "
             f"Tentativa atual: '{load_ref}'. "
-            "Use um checkpoint local via --model-ref ou sincronize a pasta correta de pesos."
+            "Use um checkpoint local via --model-ref, sincronize a pasta correta de pesos, "
+            "ou informe um repo id valido do Hugging Face."
         ) from exc
 
 
