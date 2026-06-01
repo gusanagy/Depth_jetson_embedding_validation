@@ -25,6 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-dir", required=True)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--model-name", default="da3-large")
+    parser.add_argument("--model-ref", default="")
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--process-res", type=int, default=504)
     parser.add_argument("--no-progress", action="store_true")
@@ -157,6 +158,23 @@ def normalize_depth(depth: np.ndarray) -> np.ndarray:
     return np.clip(norm, 0.0, 1.0)
 
 
+def load_model(model_name: str, model_ref: str, device: str):
+    from depth_anything_3.api import DepthAnything3
+    from huggingface_hub.errors import RepositoryNotFoundError
+
+    load_ref = model_ref or model_name
+    try:
+        return DepthAnything3.from_pretrained(load_ref).to(device), load_ref
+    except RepositoryNotFoundError as exc:
+        if model_ref:
+            raise
+        raise SystemExit(
+            "Nao foi possivel resolver o modelo do DA3 no Hugging Face. "
+            f"Tentativa atual: '{load_ref}'. "
+            "Use um checkpoint local via --model-ref ou sincronize a pasta correta de pesos."
+        ) from exc
+
+
 def main() -> int:
     args = parse_args()
     model_root = Path(args.model_root)
@@ -176,10 +194,8 @@ def main() -> int:
     install_evo_shim()
     add_model_root(model_root)
 
-    from depth_anything_3.api import DepthAnything3
-
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = DepthAnything3.from_pretrained(args.model_name).to(device)
+    model, resolved_model_ref = load_model(args.model_name, args.model_ref, device)
 
     image_paths = list_images(input_dir, args.limit)
     iterator = image_paths if args.no_progress or tqdm is None else tqdm(image_paths, desc="DA3", unit="img")
@@ -207,6 +223,7 @@ def main() -> int:
         "device": device,
         "input_dir": str(input_dir),
         "model_name": args.model_name,
+        "model_ref": resolved_model_ref,
         "processed_items": processed,
         "processed_unit": "images",
         "process_res": args.process_res,

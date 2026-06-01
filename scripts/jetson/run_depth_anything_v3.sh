@@ -12,6 +12,7 @@ Options:
   --dataset NAME          Dataset name under the chosen dataset root. Default: all
   --dataset-root PATH     Override dataset root. Default: DA3 datasets fallback to DA2 datasets
   --model-name NAME       Default: da3-large
+  --model-ref REF         Optional local checkpoint directory or HF repo id override
   --process-res N         Default: 504
   --limit N               Optional image limit.
   --image IMAGE           Docker image tag. Default: depth-jetson-mono:thor-jp71
@@ -23,6 +24,7 @@ WORKSPACE_ROOT="$HOME/Documents/depth_validation_workspace"
 DATASET="all"
 DATASET_ROOT=""
 MODEL_NAME="da3-large"
+MODEL_REF=""
 PROCESS_RES=504
 LIMIT=0
 IMAGE="depth-jetson-mono:thor-jp71"
@@ -34,6 +36,7 @@ while [[ $# -gt 0 ]]; do
     --dataset) DATASET=$2; shift 2 ;;
     --dataset-root) DATASET_ROOT=$2; shift 2 ;;
     --model-name) MODEL_NAME=$2; shift 2 ;;
+    --model-ref) MODEL_REF=$2; shift 2 ;;
     --process-res) PROCESS_RES=$2; shift 2 ;;
     --limit) LIMIT=$2; shift 2 ;;
     --image) IMAGE=$2; shift 2 ;;
@@ -72,6 +75,58 @@ if ! "${DOCKER[@]}" image inspect "$IMAGE" >/dev/null 2>&1; then
   exit 1
 fi
 
+to_container_model_ref() {
+  local ref=$1
+  if [[ -z "$ref" ]]; then
+    return 1
+  fi
+  if [[ "$ref" == "$MODEL_ROOT"* ]]; then
+    printf '/workspace/model/%s\n' "${ref#$MODEL_ROOT/}"
+    return 0
+  fi
+  if [[ "$ref" == /* ]]; then
+    echo "Model ref must be inside $MODEL_ROOT or be a Hugging Face repo id: $ref" >&2
+    exit 1
+  fi
+  printf '%s\n' "$ref"
+}
+
+resolve_local_model_ref() {
+  local normalized_name=${MODEL_NAME//-/_}
+  local candidate
+  local patterns=(
+    "$MODEL_ROOT/checkpoints/$MODEL_NAME"
+    "$MODEL_ROOT/checkpoints/$normalized_name"
+    "$MODEL_ROOT/pretrained_models/$MODEL_NAME"
+    "$MODEL_ROOT/pretrained_models/$normalized_name"
+    "$MODEL_ROOT/pretrained/$MODEL_NAME"
+    "$MODEL_ROOT/pretrained/$normalized_name"
+    "$MODEL_ROOT/models/$MODEL_NAME"
+    "$MODEL_ROOT/models/$normalized_name"
+    "$MODEL_ROOT/weights/$MODEL_NAME"
+    "$MODEL_ROOT/weights/$normalized_name"
+    "$MODEL_ROOT/$MODEL_NAME"
+    "$MODEL_ROOT/$normalized_name"
+  )
+
+  for candidate in "${patterns[@]}"; do
+    if [[ -d "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  while IFS= read -r candidate; do
+    if [[ -n "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done < <(find "$MODEL_ROOT" -maxdepth 4 -type d \
+    \( -iname "*$MODEL_NAME*" -o -iname "*$normalized_name*" \) | sort)
+
+  return 1
+}
+
 resolve_image_dir() {
   local base=$1
   local candidate
@@ -109,6 +164,13 @@ fi
 
 mkdir -p "$OUTPUT_ROOT" "$CACHE_ROOT/huggingface" "$CACHE_ROOT/torch"
 
+resolved_model_ref=""
+if [[ -n "$MODEL_REF" ]]; then
+  resolved_model_ref=$(to_container_model_ref "$MODEL_REF")
+elif local_ref="$(resolve_local_model_ref)"; then
+  resolved_model_ref=$(to_container_model_ref "$local_ref")
+fi
+
 for ds in "${datasets[@]}"; do
   dataset_dir="$DATASET_ROOT/$ds"
   if [[ ! -d "$dataset_dir" ]]; then
@@ -135,7 +197,11 @@ for ds in "${datasets[@]}"; do
   fi
 
   echo
-  echo "== DA3 dataset=$ds model=$MODEL_NAME input=$(basename "$input_dir") limit=$LIMIT =="
+  if [[ -n "$resolved_model_ref" ]]; then
+    echo "== DA3 dataset=$ds model=$MODEL_NAME ref=$resolved_model_ref input=$(basename "$input_dir") limit=$LIMIT =="
+  else
+    echo "== DA3 dataset=$ds model=$MODEL_NAME input=$(basename "$input_dir") limit=$LIMIT =="
+  fi
   "${DOCKER[@]}" run --rm --runtime=nvidia \
     --ipc=host \
     --ulimit memlock=-1 \
@@ -147,5 +213,5 @@ for ds in "${datasets[@]}"; do
     -v "$CACHE_ROOT/huggingface":/workspace/cache/huggingface \
     -v "$CACHE_ROOT/torch":/workspace/cache/torch \
     "$IMAGE" \
-    bash -lc "export HF_HOME=/workspace/cache/huggingface TORCH_HOME=/workspace/cache/torch PYTHONPATH=/workspace/model/src:\$PYTHONPATH && python3 /workspace/runner/scripts/jetson/depth_anything3_batch.py --model-root /workspace/model --input-dir /workspace/input --output-dir /workspace/output --model-name \"$MODEL_NAME\" --process-res \"$PROCESS_RES\" ${limit_arg[*]} ${progress_arg[*]}"
+    bash -lc "export HF_HOME=/workspace/cache/huggingface TORCH_HOME=/workspace/cache/torch PYTHONPATH=/workspace/model/src:\$PYTHONPATH && python3 /workspace/runner/scripts/jetson/depth_anything3_batch.py --model-root /workspace/model --input-dir /workspace/input --output-dir /workspace/output --model-name \"$MODEL_NAME\" ${resolved_model_ref:+--model-ref \"$resolved_model_ref\"} --process-res \"$PROCESS_RES\" ${limit_arg[*]} ${progress_arg[*]}"
 done

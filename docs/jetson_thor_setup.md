@@ -201,6 +201,8 @@ Saidas geradas:
 
 - usa a imagem `depth-jetson-mono`
 - faz fallback para os datasets do `Depth Anything V2` quando `depth-anything-3/datasets` nao estiver sincronizado
+- tenta resolver checkpoint local automaticamente dentro de `external_models/depth-anything-3`
+- aceita `--model-ref` para apontar um diretorio local de pesos ou um repo id explicito
 - salva `raw/.npy`, `grayscale/.png`, `color/.png` e `batch_run_info.json`
 - instala shims locais para dependencias opcionais de exportacao 3D, como `open3d`, `pycolmap`, `plyfile`, `moviepy`, `trimesh` e `gsplat`, para nao bloquear a inferencia 2D
 
@@ -208,6 +210,7 @@ Saidas geradas:
 cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
 bash scripts/jetson/run_depth_anything_v3.sh --limit 4
 bash scripts/jetson/run_depth_anything_v3.sh --dataset val_suim --model-name da3-large --limit 4
+bash scripts/jetson/run_depth_anything_v3.sh --dataset val_suim --model-name da3-large --model-ref ~/Documents/depth_validation_workspace/external_models/depth-anything-3/checkpoints/da3-large --limit 4
 ```
 
 Saidas geradas:
