@@ -531,6 +531,40 @@ bash scripts/jetson/run_initial_table_current_mode.sh \
   --skip-flops
 ```
 
+Se a placa estiver aquecendo demais, use protecao termica e cooldown:
+
+```bash
+bash scripts/jetson/run_initial_table_current_mode.sh \
+  --label initial_table_full_safe_try \
+  --profile full \
+  --skip-flops \
+  --thermal-max-temp-c 82 \
+  --cooldown-sec 120
+```
+
+Esse modo:
+
+- corta cada comando medido quando algum sensor do `tegrastats` atingir o limite configurado;
+- registra `thermal_event.json` na pasta do modelo;
+- espera entre uma etapa e outra para reduzir o pico termico acumulado.
+
+Para a rodada longa mais segura, prefira o wrapper dedicado:
+
+```bash
+bash scripts/jetson/run_initial_table_safe.sh \
+  --workspace-root ~/Documents/depth_validation_workspace \
+  --label initial_table_full_safe \
+  --profile full \
+  --thermal-max-temp-c 82 \
+  --cooldown-sec 120
+```
+
+Esse wrapper separa o processo em tres fases:
+
+1. energia e inferencia com protecao termica e sem auto-FLOPs;
+2. probes de FLOPs um a um, tambem protegidos por `tegrastats`;
+3. finalizacao do `summary_enriched`, PNG e LaTeX.
+
 Observacao importante sobre a versao atual do pipeline:
 
 - o campo `samples` do `summary.csv` original vem do `tegrastats`

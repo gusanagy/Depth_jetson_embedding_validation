@@ -11,6 +11,10 @@ Options:
   --workspace-root PATH   Default: ~/Documents/depth_validation_workspace
   --label NAME            Report label. Default: initial_table_current_mode
   --profile NAME          quick or full. Default: quick
+  --cooldown-sec N        Sleep this many seconds between energy/FLOPs steps.
+                          Default: 0
+  --thermal-max-temp-c N  Abort each measured command if tegrastats reaches this
+                          temperature in Celsius. Default: 0 (disabled)
   --da2-encoder NAME      Default: vitb
   --da2-limit N           Override quick limit for DA2
   --da3-limit N           Override quick limit for DA3
@@ -26,6 +30,8 @@ WORKSPACE_ROOT="$HOME/Documents/depth_validation_workspace"
 LABEL="initial_table_current_mode"
 PROFILE="quick"
 DA2_ENCODER="vitb"
+COOLDOWN_SEC=0
+THERMAL_MAX_TEMP_C=0
 DA2_LIMIT=""
 DA3_LIMIT=""
 DEPTH_PRO_LIMIT=""
@@ -39,6 +45,8 @@ while [[ $# -gt 0 ]]; do
     --workspace-root) WORKSPACE_ROOT=$2; shift 2 ;;
     --label) LABEL=$2; shift 2 ;;
     --profile) PROFILE=$2; shift 2 ;;
+    --cooldown-sec) COOLDOWN_SEC=$2; shift 2 ;;
+    --thermal-max-temp-c) THERMAL_MAX_TEMP_C=$2; shift 2 ;;
     --da2-encoder) DA2_ENCODER=$2; shift 2 ;;
     --da2-limit) DA2_LIMIT=$2; shift 2 ;;
     --da3-limit) DA3_LIMIT=$2; shift 2 ;;
@@ -54,6 +62,16 @@ done
 
 if [[ "$PROFILE" != "quick" && "$PROFILE" != "full" ]]; then
   echo "Invalid profile: $PROFILE" >&2
+  exit 1
+fi
+
+if ! [[ "$COOLDOWN_SEC" =~ ^[0-9]+$ ]]; then
+  echo "Invalid cooldown-sec: $COOLDOWN_SEC" >&2
+  exit 1
+fi
+
+if ! [[ "$THERMAL_MAX_TEMP_C" =~ ^[0-9]+$ ]]; then
+  echo "Invalid thermal-max-temp-c: $THERMAL_MAX_TEMP_C" >&2
   exit 1
 fi
 
@@ -252,9 +270,11 @@ run_with_energy() {
   shift
   local report_dir="$REPORT_ROOT/$model_key"
   mkdir -p "$report_dir"
+  rm -f "$report_dir/thermal_event.json"
   local exit_code=0
   set +e
-  bash "$REPO_ROOT/scripts/benchmark/run_with_tegrastats.sh" "$report_dir" -- "$@"
+  THERMAL_MAX_TEMP_C="$THERMAL_MAX_TEMP_C" \
+    bash "$REPO_ROOT/scripts/benchmark/run_with_tegrastats.sh" "$report_dir" -- "$@"
   exit_code=$?
   set -e
 
@@ -293,6 +313,15 @@ if run_meta_path.exists():
 summary_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 PY
   return "$exit_code"
+}
+
+cooldown_if_needed() {
+  local reason=$1
+  if (( COOLDOWN_SEC <= 0 )); then
+    return 0
+  fi
+  echo "Cooldown: aguardando ${COOLDOWN_SEC}s (${reason})"
+  sleep "$COOLDOWN_SEC"
 }
 
 maybe_run_flops_probe() {
@@ -354,6 +383,7 @@ record_model() {
   shift 7
 
   if run_with_energy "$model_key" "$@"; then
+    cooldown_if_needed "apos energia de $model_key"
     if ! maybe_run_flops_probe "$model_key" "$report_dir"; then
       echo "Warning: FLOPs probe failed for $model_key; keeping energy results." >&2
     fi
@@ -362,10 +392,13 @@ record_model() {
     local exit_code=$?
     append_failed_row "$model_key" "$model_name" "$dataset_scope" "$artifacts_dir" "$report_dir" "$failure_notes (exit_code=$exit_code)"
   fi
+  cooldown_if_needed "apos ciclo completo de $model_key"
 }
 
 echo "Current power mode: $CURRENT_MODE_ID ($CURRENT_MODE_NAME)"
 echo "Report root: $REPORT_ROOT"
+echo "Thermal max temp: $THERMAL_MAX_TEMP_C C"
+echo "Cooldown between steps: $COOLDOWN_SEC s"
 
 record_model depth_anything_v2 \
   "Depth Anything V2" \
