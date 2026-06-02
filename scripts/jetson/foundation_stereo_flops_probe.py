@@ -4,11 +4,24 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+import types
 from pathlib import Path
 
 import torch
 
 from foundation_stereo_batch import add_model_root_to_path, list_pairs, load_config, patch_runtime, prepare_image
+
+
+def ensure_open3d_stub() -> None:
+    if "open3d" in sys.modules:
+        return
+
+    open3d_stub = types.ModuleType("open3d")
+    open3d_stub.geometry = types.SimpleNamespace()
+    open3d_stub.utility = types.SimpleNamespace()
+    open3d_stub.io = types.SimpleNamespace()
+    sys.modules["open3d"] = open3d_stub
 
 
 def parse_args() -> argparse.Namespace:
@@ -73,6 +86,7 @@ def main() -> int:
     output_json.parent.mkdir(parents=True, exist_ok=True)
 
     patch_runtime()
+    ensure_open3d_stub()
     add_model_root_to_path(model_root)
     from Utils import set_logging_format, set_seed
     from core.foundation_stereo import FoundationStereo
