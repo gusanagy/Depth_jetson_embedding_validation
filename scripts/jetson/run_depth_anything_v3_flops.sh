@@ -109,7 +109,9 @@ to_container_model_ref() {
 
 dataset_dir="$DATASET_ROOT/$DATASET"
 input_dir="$(resolve_image_dir "$dataset_dir")"
-input_image="$(find "$input_dir" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.bmp' -o -iname '*.tif' -o -iname '*.tiff' \) | sort | head -n 1)"
+mapfile -t input_images < <(find "$input_dir" -maxdepth 1 -type f \
+  \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.bmp' -o -iname '*.tif' -o -iname '*.tiff' \) | sort)
+input_image="${input_images[0]:-}"
 if [[ -z "$input_image" ]]; then
   echo "No input image found for dataset: $dataset_dir" >&2
   exit 1

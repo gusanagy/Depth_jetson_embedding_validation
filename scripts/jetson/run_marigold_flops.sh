@@ -98,7 +98,13 @@ fi
 
 dataset_dir="$DATASET_ROOT/$DATASET"
 input_dir="$(resolve_image_dir "$dataset_dir")"
-input_image="$(find "$input_dir" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.bmp' -o -iname '*.tif' -o -iname '*.tiff' \) | sort | head -n 1)"
+mapfile -t input_images < <(find "$input_dir" -maxdepth 1 -type f \
+  \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.bmp' -o -iname '*.tif' -o -iname '*.tiff' \) | sort)
+input_image="${input_images[0]:-}"
+if [[ -z "$input_image" ]]; then
+  echo "No input image found in $input_dir" >&2
+  exit 1
+fi
 mkdir -p "$(dirname "$OUTPUT_JSON")" "$CACHE_ROOT/huggingface" "$CACHE_ROOT/torch"
 
 fp16_arg=()
