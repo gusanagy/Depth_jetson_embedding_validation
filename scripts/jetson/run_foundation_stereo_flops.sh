@@ -68,6 +68,7 @@ else
 fi
 
 mkdir -p "$(dirname "$OUTPUT_JSON")"
+OUTPUT_BASENAME=$(basename "$OUTPUT_JSON")
 
 "${DOCKER[@]}" run --rm --runtime=nvidia \
   --ipc=host \
@@ -78,4 +79,4 @@ mkdir -p "$(dirname "$OUTPUT_JSON")"
   -v "$(dirname "$OUTPUT_JSON")":/workspace/output \
   -v "$WORKSPACE_ROOT/depth_compare_sorriso":/workspace/runner:ro \
   "$IMAGE" \
-  bash -lc "cd /workspace/model && python3 /workspace/runner/scripts/jetson/foundation_stereo_flops_probe.py --model-root /workspace/model --dataset-root /workspace/data --ckpt \"$CONTAINER_CKPT\" --output-json /workspace/output/$(basename \"$OUTPUT_JSON\") --valid-iters \"$VALID_ITERS\""
+  bash -lc "cd /workspace/model && python3 /workspace/runner/scripts/jetson/foundation_stereo_flops_probe.py --model-root /workspace/model --dataset-root /workspace/data --ckpt \"$CONTAINER_CKPT\" --output-json /workspace/output/$OUTPUT_BASENAME --valid-iters \"$VALID_ITERS\""
