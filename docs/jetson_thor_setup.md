@@ -494,6 +494,8 @@ Comportamento atual do runner consolidado:
 - se um modelo falhar, a tabela nao para imediatamente
 - o status desse modelo entra como `failed`
 - os modelos seguintes continuam
+- quando um modelo conclui com sucesso, o runner tenta gerar `flops.json` automaticamente na pasta desse modelo
+- se o probe de FLOPs falhar, a medicao de energia e preservada e o relatorio continua
 - no fim, ainda e possivel gerar `summary_enriched`, `png` e `tex` do relatorio parcial
 
 Arquivos da tabela inicial:
@@ -518,6 +520,16 @@ Cada pasta de modelo inclui:
 - `command.stdout.log`
 - `command.stderr.log`
 - `tegrastats_summary.json`
+- `flops.json` quando o probe automatico estiver disponivel para o modelo
+
+Se quiser desabilitar essa etapa automatica:
+
+```bash
+bash scripts/jetson/run_initial_table_current_mode.sh \
+  --label initial_table_full \
+  --profile full \
+  --skip-flops
+```
 
 Observacao importante sobre a versao atual do pipeline:
 

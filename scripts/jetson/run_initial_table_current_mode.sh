@@ -18,6 +18,7 @@ Options:
   --marigold-limit N      Override quick limit for Marigold
   --foundation-limit N    Override quick limit for FoundationStereo
   --igev-limit N          Override quick limit for IGEV
+  --skip-flops            Disable automatic FLOPs probes after successful runs
 EOF
 }
 
@@ -31,6 +32,7 @@ DEPTH_PRO_LIMIT=""
 MARIGOLD_LIMIT=""
 FOUNDATION_LIMIT=""
 IGEV_LIMIT=""
+AUTO_FLOPS=1
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -44,6 +46,7 @@ while [[ $# -gt 0 ]]; do
     --marigold-limit) MARIGOLD_LIMIT=$2; shift 2 ;;
     --foundation-limit) FOUNDATION_LIMIT=$2; shift 2 ;;
     --igev-limit) IGEV_LIMIT=$2; shift 2 ;;
+    --skip-flops) AUTO_FLOPS=0; shift ;;
     -h|--help) usage; exit 0 ;;
     *) usage; exit 1 ;;
   esac
@@ -292,6 +295,54 @@ PY
   return "$exit_code"
 }
 
+maybe_run_flops_probe() {
+  local model_key=$1
+  local report_dir=$2
+  local flops_path="$report_dir/flops.json"
+
+  if [[ $AUTO_FLOPS -eq 0 ]]; then
+    return 0
+  fi
+
+  case "$model_key" in
+    depth_anything_v2)
+      bash "$SCRIPT_DIR/run_depth_anything_v2_flops.sh" \
+        --workspace-root "$WORKSPACE_ROOT" \
+        --dataset val_suim \
+        --encoder "$DA2_ENCODER" \
+        --output-json "$flops_path"
+      ;;
+    foundation_stereo)
+      bash "$SCRIPT_DIR/run_foundation_stereo_flops.sh" \
+        --workspace-root "$WORKSPACE_ROOT" \
+        --output-json "$flops_path"
+      ;;
+    depth_anything_v3)
+      bash "$SCRIPT_DIR/run_depth_anything_v3_flops.sh" \
+        --workspace-root "$WORKSPACE_ROOT" \
+        --dataset val_suim \
+        --output-json "$flops_path"
+      ;;
+    depth_pro)
+      bash "$SCRIPT_DIR/run_depth_pro_flops.sh" \
+        --workspace-root "$WORKSPACE_ROOT" \
+        --dataset val_suim \
+        --output-json "$flops_path"
+      ;;
+    marigold)
+      bash "$SCRIPT_DIR/run_marigold_flops.sh" \
+        --workspace-root "$WORKSPACE_ROOT" \
+        --dataset val_suim \
+        --output-json "$flops_path"
+      ;;
+    igev)
+      bash "$SCRIPT_DIR/run_igev_flops.sh" \
+        --workspace-root "$WORKSPACE_ROOT" \
+        --output-json "$flops_path"
+      ;;
+  esac
+}
+
 record_model() {
   local model_key=$1
   local model_name=$2
@@ -303,6 +354,9 @@ record_model() {
   shift 7
 
   if run_with_energy "$model_key" "$@"; then
+    if ! maybe_run_flops_probe "$model_key" "$report_dir"; then
+      echo "Warning: FLOPs probe failed for $model_key; keeping energy results." >&2
+    fi
     append_supported_row "$model_key" "$model_name" "$dataset_scope" "$artifacts_dir" "$report_dir" "$success_notes"
   else
     local exit_code=$?
