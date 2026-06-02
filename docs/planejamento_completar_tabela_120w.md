@@ -1,5 +1,29 @@
 # Planejamento Para Completar a Tabela 120W
 
+## Atualizacao Final Em 2026-06-02
+
+A fase de completacao planejada neste documento foi concluida no fluxo `120W`.
+
+Estado consolidado:
+
+- `initial_table_120w_full_v4`: rodada completa de energia/inferencia com os 6 modelos;
+- `initial_table_120w_full_v5`: rodada consolidada final com os 6 modelos e `flops.json` para todos;
+- tabelas combinada, monocular e stereo geradas em CSV, JSON, PNG e LaTeX;
+- resultados puxados para:
+  - `reports/pulled_from_jetson/initial_table/initial_table_120w_full_v5/`
+
+Correcao importante aplicada durante esse fechamento:
+
+- alguns wrappers de FLOPs ainda herdavam o problema de `pipefail` com `sort | head -n 1`, o que gerava `exit_code=141` antes de subir o container;
+- `run_depth_anything_v2_flops.sh`, `run_depth_anything_v3_flops.sh`, `run_depth_pro_flops.sh` e `run_marigold_flops.sh` foram corrigidos;
+- `run_foundation_stereo_flops.sh` teve a composicao do `bash -lc` corrigida;
+- `foundation_stereo_flops_probe.py` ganhou um stub de `open3d` para nao bloquear a medicao de FLOPs.
+
+Ou seja, este documento passa a servir como historico do plano executado, e o estado operacional atual deve ser consultado primeiro em:
+
+- `docs/jetson_thor_setup.md`
+- `reports/README.md`
+
 ## Estado Atual
 
 A rodada `initial_table_120w_full` em `120W` nao cobriu todos os modelos.

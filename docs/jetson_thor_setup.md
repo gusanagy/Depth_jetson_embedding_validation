@@ -227,6 +227,16 @@ bash scripts/jetson/run_depth_anything_v3_flops.sh \
   --output-json ~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v4/depth_anything_v3/flops.json
 ```
 
+FLOPs do `Depth Anything V2`:
+
+```bash
+bash scripts/jetson/run_depth_anything_v2_flops.sh \
+  --workspace-root ~/Documents/depth_validation_workspace \
+  --dataset val_suim \
+  --encoder vitb \
+  --output-json ~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v5/depth_anything_v2/flops.json
+```
+
 `Depth Pro`:
 
 - usa a imagem `depth-jetson-mono`
@@ -243,6 +253,15 @@ Saidas geradas:
 
 - `~/Documents/depth_validation_workspace/artifacts/depth_pro/<dataset>/`
 
+FLOPs do `Depth Pro`:
+
+```bash
+bash scripts/jetson/run_depth_pro_flops.sh \
+  --workspace-root ~/Documents/depth_validation_workspace \
+  --dataset val_suim \
+  --output-json ~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v5/depth_pro/flops.json
+```
+
 `Marigold`:
 
 - usa a imagem dedicada `depth-jetson-marigold`
@@ -258,6 +277,15 @@ bash scripts/jetson/run_marigold.sh --limit 2 --fp16
 Saidas geradas:
 
 - `~/Documents/depth_validation_workspace/artifacts/marigold/<dataset>/`
+
+FLOPs do `Marigold`:
+
+```bash
+bash scripts/jetson/run_marigold_flops.sh \
+  --workspace-root ~/Documents/depth_validation_workspace \
+  --dataset val_suim \
+  --output-json ~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v5/marigold/flops.json
+```
 
 `FoundationStereo`:
 
@@ -281,6 +309,14 @@ Saidas geradas:
 
 - `~/Documents/depth_validation_workspace/artifacts/foundation_stereo/val/<sample_id>/`
 - `~/Documents/depth_validation_workspace/artifacts/foundation_stereo/val/batch_run_info.json`
+
+FLOPs do `FoundationStereo`:
+
+```bash
+bash scripts/jetson/run_foundation_stereo_flops.sh \
+  --workspace-root ~/Documents/depth_validation_workspace \
+  --output-json ~/Documents/depth_validation_workspace/reports/initial_table/initial_table_120w_full_v5/foundation_stereo/flops.json
+```
 
 `IGEV`:
 
@@ -565,6 +601,30 @@ Esse wrapper separa o processo em tres fases:
 2. probes de FLOPs um a um, tambem protegidos por `tegrastats`;
 3. finalizacao do `summary_enriched`, PNG e LaTeX.
 
+### 11.1 Estado pratico da `v5`
+
+Em `2026-06-02`, a rodada `initial_table_120w_full_v5` foi fechada com:
+
+- os 6 modelos completos em `120W`;
+- `flops.json` presente para todos os 6 modelos;
+- tabela combinada, monocular e stereo regeneradas;
+- PNG e LaTeX gerados na Jetson e puxados para este repositório local.
+
+Artefatos locais puxados da Jetson:
+
+- `reports/pulled_from_jetson/initial_table/initial_table_120w_full_v5/summary_enriched.csv`
+- `reports/pulled_from_jetson/initial_table/initial_table_120w_full_v5/initial_table_120w_full_v5_plot.png`
+- `reports/pulled_from_jetson/initial_table/initial_table_120w_full_v5/table_publication.tex`
+- `reports/pulled_from_jetson/initial_table/initial_table_120w_full_v5/initial_table_120w_full_v5_monocular_plot.png`
+- `reports/pulled_from_jetson/initial_table/initial_table_120w_full_v5/table_publication_monocular.tex`
+- `reports/pulled_from_jetson/initial_table/initial_table_120w_full_v5/initial_table_120w_full_v5_stereo_plot.png`
+- `reports/pulled_from_jetson/initial_table/initial_table_120w_full_v5/table_publication_stereo.tex`
+
+Observacao metodologica importante:
+
+- se um novo label for criado por copia de outro relatorio antigo, remova `summary.csv`, `summary.json`, `summary.jsonl` e os arquivos `summary_enriched*` antes de refinalizar;
+- isso evita carregar `report_dir` herdado do label antigo e garante que o backfill leia os `flops.json` corretos do novo label.
+
 Observacao importante sobre a versao atual do pipeline:
 
 - o campo `samples` do `summary.csv` original vem do `tegrastats`
@@ -633,6 +693,15 @@ Isso atualiza os campos:
 - `jgflops`
 
 sem precisar repetir a medicao de energia.
+
+Os probes atualmente disponiveis neste repositório cobrem os 6 modelos:
+
+- `run_depth_anything_v2_flops.sh`
+- `run_depth_anything_v3_flops.sh`
+- `run_depth_pro_flops.sh`
+- `run_marigold_flops.sh`
+- `run_foundation_stereo_flops.sh`
+- `run_igev_flops.sh`
 
 Para rodar a partir desta maquina local e puxar automaticamente os resultados da Jetson:
 

@@ -50,3 +50,40 @@ Arquivos principais esperados em ambos:
 - `<label>_stereo_plot.png`
 - `table_publication_stereo.tex`
 - `report_manifest.json`
+
+## Rodada de referencia atual
+
+Em `2026-06-02`, a rodada local de referencia passou a ser:
+
+- `reports/pulled_from_jetson/initial_table/initial_table_120w_full_v5/`
+
+Essa pasta ja contem:
+
+- os 6 modelos com `status=completed`;
+- `flops.json` em cada subpasta de modelo;
+- tabela combinada;
+- tabela monocular;
+- tabela stereo;
+- PNG e LaTeX para os tres quadros.
+
+Arquivos principais:
+
+- `summary_enriched.csv`
+- `initial_table_120w_full_v5_plot.png`
+- `table_publication.tex`
+- `summary_monocular_enriched.csv`
+- `initial_table_120w_full_v5_monocular_plot.png`
+- `table_publication_monocular.tex`
+- `summary_stereo_enriched.csv`
+- `initial_table_120w_full_v5_stereo_plot.png`
+- `table_publication_stereo.tex`
+
+## Observacao sobre copia de labels
+
+Se voce criar um novo label copiando a pasta de outro relatorio:
+
+- apague `summary.csv`, `summary.json`, `summary.jsonl` e `summary_enriched*` antes de refinalizar;
+- mantenha apenas as subpastas dos modelos e seus artefatos.
+
+Isso evita que `report_dir` herdado do label antigo faça o backfill ler `flops.json`
+ou logs de outra rodada.
