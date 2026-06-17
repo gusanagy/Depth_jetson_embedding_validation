@@ -2,10 +2,11 @@
 
 ## Objetivo
 
-Esta documentacao organiza o uso da Jetson `PDI@10.230.88.175` para:
+Esta documentacao organiza o uso de uma Jetson acessada por `SSH` para:
 
 - clonar este repositorio na Jetson;
-- sincronizar os seis modelos do host antigo `pdi-b06@10.228.249.119`;
+- sincronizar os seis modelos a partir de um host de origem configurado por
+  variaveis de ambiente;
 - preparar uma pasta de avaliacao unica;
 - testar a criacao dos Dockerfiles-base para Jetson AGX Thor;
 - deixar um caminho repetivel para benchmark e inferencia.
@@ -21,6 +22,17 @@ Coletado por SSH em `2026-05-29`:
 - Docker: `29.5.2`
 - Docker Compose: `v5.1.4`
 - Espaco livre aproximado em `/`: `592G`
+
+## Parametros privados
+
+Os exemplos desta documentacao usam placeholders em vez de valores reais de
+infraestrutura. Antes de executar os scripts, ajuste conforme seu ambiente:
+
+```bash
+export JETSON_REMOTE_HOST="<jetson-user>@<jetson-host>"
+export DEPTH_SOURCE_USER="<source-user>"
+export DEPTH_SOURCE_HOST="<source-host>"
+```
 
 ## Layout recomendado de workspace
 
@@ -43,16 +55,16 @@ Padrao usado pelos scripts:
 
 Origem:
 
-- host: `pdi-b06@10.228.249.119`
+- host: `${DEPTH_SOURCE_USER}@${DEPTH_SOURCE_HOST}`
 
 Pastas mapeadas:
 
-- `da2` -> `/home/pdi-b06/almacen/Depth-Anything-V2/`
-- `da3` -> `/mnt/almacen/Sorriso1909/depth-anything-3/`
-- `depthpro` -> `/home/pdi-b06/sorriso_07/ml-depth-pro/`
-- `marigold` -> `/mnt/HD2/Marigold/`
-- `foundation` -> `/home/pdi-b06/f_s_sorriso96/FoundationStereo/`
-- `igev` -> `/mnt/HD2/IGEV/`
+- `da2` -> `<source-path-da2>`
+- `da3` -> `<source-path-da3>`
+- `depthpro` -> `<source-path-depthpro>`
+- `marigold` -> `<source-path-marigold>`
+- `foundation` -> `<source-path-foundation>`
+- `igev` -> `<source-path-igev>`
 
 ## Perfis de sincronizacao
 
@@ -74,7 +86,7 @@ Para rodar inferencia real:
 ### 1. Entrar na Jetson
 
 ```bash
-ssh PDI@10.230.88.175
+ssh "$JETSON_REMOTE_HOST"
 ```
 
 ### 2. Clonar ou atualizar este repositorio
@@ -109,6 +121,8 @@ Primeiro teste recomendado:
 
 ```bash
 cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
+export DEPTH_SOURCE_USER="<source-user>"
+export DEPTH_SOURCE_HOST="<source-host>"
 bash scripts/jetson/sync_models_from_popos.sh --profile code_weights
 ```
 
@@ -134,7 +148,7 @@ bash scripts/jetson/sync_models_from_popos.sh --profile full --model foundation
 Observacao:
 
 - o script usa `rsync` por `ssh`
-- a Jetson vai pedir a senha do host antigo durante a sincronizacao
+- a Jetson pode pedir a senha do host de origem durante a sincronizacao
 
 ### 5. Testar a criacao dos Dockerfiles
 

@@ -21,7 +21,7 @@ Profiles:
   code_weights Copies source code plus checkpoints/pretrained weights, excluding datasets and outputs.
 
 Source host:
-  pdi-b06@10.228.249.119
+  Set DEPTH_SOURCE_USER and DEPTH_SOURCE_HOST before running.
 EOF
 }
 
@@ -60,17 +60,17 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-SOURCE_USER="pdi-b06"
-SOURCE_HOST="10.228.249.119"
+SOURCE_USER="${DEPTH_SOURCE_USER:-<source-user>}"
+SOURCE_HOST="${DEPTH_SOURCE_HOST:-<source-host>}"
 TARGET_ROOT="$WORKSPACE_ROOT/external_models"
 
 declare -A SOURCE_PATHS=(
-  [da2]="/home/pdi-b06/almacen/Depth-Anything-V2/"
-  [da3]="/mnt/almacen/Sorriso1909/depth-anything-3/"
-  [depthpro]="/home/pdi-b06/sorriso_07/ml-depth-pro/"
-  [marigold]="/mnt/HD2/Marigold/"
-  [foundation]="/home/pdi-b06/f_s_sorriso96/FoundationStereo/"
-  [igev]="/mnt/HD2/IGEV/"
+  [da2]="${DEPTH_SOURCE_DA2_PATH:-<source-path-da2>/}"
+  [da3]="${DEPTH_SOURCE_DA3_PATH:-<source-path-da3>/}"
+  [depthpro]="${DEPTH_SOURCE_DEPTHPRO_PATH:-<source-path-depthpro>/}"
+  [marigold]="${DEPTH_SOURCE_MARIGOLD_PATH:-<source-path-marigold>/}"
+  [foundation]="${DEPTH_SOURCE_FOUNDATION_PATH:-<source-path-foundation>/}"
+  [igev]="${DEPTH_SOURCE_IGEV_PATH:-<source-path-igev>/}"
 )
 
 declare -A TARGET_NAMES=(
@@ -134,6 +134,11 @@ esac
 
 mkdir -p "$TARGET_ROOT"
 
+if [[ "$SOURCE_USER" == *"<source-user>"* || "$SOURCE_HOST" == *"<source-host>"* ]]; then
+  echo "Source host is not configured. Export DEPTH_SOURCE_USER and DEPTH_SOURCE_HOST." >&2
+  exit 1
+fi
+
 keys=(da2 da3 depthpro marigold foundation igev)
 if [[ -n "$ONLY_MODEL" ]]; then
   keys=("$ONLY_MODEL")
@@ -152,6 +157,11 @@ for key in "${keys[@]}"; do
 
   src="${SOURCE_PATHS[$key]}"
   dst="$TARGET_ROOT/${TARGET_NAMES[$key]}"
+
+  if [[ "$src" == *"<source-path-"* ]]; then
+    echo "Source path for '$key' is not configured. Export the matching DEPTH_SOURCE_*_PATH variable." >&2
+    exit 1
+  fi
 
   mkdir -p "$dst"
 

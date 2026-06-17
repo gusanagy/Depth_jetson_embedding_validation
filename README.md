@@ -14,6 +14,18 @@ com foco em:
 - medição de FLOPs por modelo;
 - geração de tabelas combinadas, monoculares e stereo em `CSV`, `PNG` e `LaTeX`.
 
+## Sanitização para repositório público
+
+Este repositório foi higienizado para não expor:
+
+- IPs internos;
+- usuários reais de SSH;
+- caminhos absolutos de máquinas privadas.
+
+Antes de usar os scripts remotos, configure explicitamente os endpoints do seu
+ambiente com variáveis como `JETSON_REMOTE_HOST`, `DEPTH_SOURCE_HOST` e
+`DEPTH_SOURCE_USER`.
+
 O fluxo principal foi construído para seis modelos:
 
 - `Depth Anything V2`
@@ -101,7 +113,7 @@ No workspace da Jetson, eles ficam em:
 No terminal, a forma mais rápida é:
 
 ```bash
-cd /home/pdi_4/Documents/Documentos/depth_compare_sorriso
+cd /path/to/depth_compare_sorriso
 
 ls -lah reports/pulled_from_jetson/initial_table/initial_table_120w_full_v5
 sed -n '1,12p' reports/pulled_from_jetson/initial_table/initial_table_120w_full_v5/summary_enriched.csv
@@ -138,7 +150,7 @@ ls -lah \
 Plot combinado:
 
 ```bash
-cd /home/pdi_4/Documents/Documentos/depth_compare_sorriso
+cd /path/to/depth_compare_sorriso
 
 MPLCONFIGDIR=/tmp/mpl python3 scripts/analysis/plot_initial_table.py \
   --summary-json reports/pulled_from_jetson/initial_table/initial_table_120w_full_v5/summary_enriched.json \
@@ -212,7 +224,8 @@ Documentação completa:
 Comandos mais importantes:
 
 ```bash
-ssh PDI@10.230.88.175
+export JETSON_REMOTE_HOST="<jetson-user>@<jetson-host>"
+ssh "$JETSON_REMOTE_HOST"
 cd ~/Documents/depth_validation_workspace/depth_compare_sorriso
 git pull --ff-only origin main
 ```
@@ -239,6 +252,7 @@ bash scripts/jetson/finalize_initial_table_report.sh \
 Pull automático para esta máquina:
 
 ```bash
+export JETSON_REMOTE_HOST="<jetson-user>@<jetson-host>"
 bash scripts/jetson/run_initial_table_remote_and_pull.sh \
   --label initial_table_120w_full_v5 \
   --skip-run

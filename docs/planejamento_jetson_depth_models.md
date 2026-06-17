@@ -34,7 +34,7 @@ Documentos complementares desta fase:
 
 ### 1. Depth Anything V2
 
-- Pasta: `/home/pdi-b06/almacen/Depth-Anything-V2`
+- Pasta: `<source-path-da2>`
 - Checkpoints encontrados: `depth_anything_v2_vits.pth`, `depth_anything_v2_vitb.pth`, `depth_anything_v2_vitl.pth`
 - Script principal de inferencia: `run.py`
 - Script de video: `run_video.py`
@@ -55,7 +55,7 @@ Observacoes:
 
 ### 2. Depth Anything 3
 
-- Pasta: `/mnt/almacen/Sorriso1909/depth-anything-3`
+- Pasta: `<source-path-da3>`
 - Scripts de inferencia e avaliacao encontrados:
   - `src/depth_anything_3/infer_run.py`
   - `src/depth_anything_3/infer_metric.py`
@@ -80,7 +80,7 @@ Observacoes:
 
 ### 3. Depth Pro
 
-- Pasta: `/home/pdi-b06/sorriso_07/ml-depth-pro`
+- Pasta: `<source-path-depthpro>`
 - Script principal de inferencia: `src/depth_pro/cli/run.py`
 - Script de metricas sem ground truth: `src/depth_pro/metrics_no_gt.py`
 - Datasets locais identificados:
@@ -98,7 +98,7 @@ Observacoes:
 
 ### 4. Marigold
 
-- Pasta: `/mnt/HD2/Marigold`
+- Pasta: `<source-path-marigold>`
 - Script de inferencia depth: `script/depth/infer.py`
 - Scripts de avaliacao:
   - `script/depth/eval.py`
@@ -112,12 +112,13 @@ Observacoes:
 
 - O script de inferencia usa `diffusers` e pipeline diffusion, entao deve ser o modelo mais caro em Jetson.
 - O script atual pergunta interativamente se o diretorio de saida ja existe, o que nao serve para pipeline automatizado.
-- O `BASE_PATH` de `no_gt_metrica.py` aponta para `/home/pdi-b06/Marigold`, mas a pasta real esta em `/mnt/HD2/Marigold`.
+- O `BASE_PATH` de `no_gt_metrica.py` apontava para um caminho absoluto de uma
+  maquina privada e precisa ser parametrizado no ambiente local.
 - A saida numerica e `.npy`, o que e excelente para metricas sem perda por colormap.
 
 ### 5. FoundationStereo
 
-- Pasta: `/home/pdi-b06/f_s_sorriso96/FoundationStereo`
+- Pasta: `<source-path-foundation>`
 - Scripts identificados:
   - `scripts/infer_run.py`
   - `scripts/run_demo.py`
@@ -141,7 +142,7 @@ Observacoes:
 
 ### 6. IGEV Stereo
 
-- Pasta: `/mnt/HD2/IGEV/IGEV-Stereo`
+- Pasta: `<source-path-igev>/IGEV-Stereo`
 - Scripts identificados:
   - `infer_run_depth.py`
   - `demo_imgs.py`

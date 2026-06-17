@@ -13,7 +13,7 @@ and pulls the resulting report folder back to this local machine.
 Options:
   --label NAME                 Required report label.
   --profile NAME              quick or full. Default: full
-  --remote-host HOST          Default: PDI@10.230.88.175
+  --remote-host HOST          Default: \$JETSON_REMOTE_HOST
   --remote-workspace PATH     Default: ~/Documents/depth_validation_workspace
   --remote-repo PATH          Default: <remote-workspace>/depth_compare_sorriso
   --local-repo PATH           Default: current repo root
@@ -26,7 +26,7 @@ EOF
 
 LABEL=""
 PROFILE="full"
-REMOTE_HOST="PDI@10.230.88.175"
+REMOTE_HOST="${JETSON_REMOTE_HOST:-<jetson-user>@<jetson-host>}"
 REMOTE_WORKSPACE='~/Documents/depth_validation_workspace'
 REMOTE_REPO=""
 LOCAL_REPO=""
@@ -59,6 +59,11 @@ fi
 
 if [[ "$PROFILE" != "quick" && "$PROFILE" != "full" ]]; then
   echo "Invalid --profile: $PROFILE" >&2
+  exit 1
+fi
+
+if [[ "$REMOTE_HOST" == *"<jetson-user>"* || "$REMOTE_HOST" == *"<jetson-host>"* ]]; then
+  echo "Remote host is not configured. Use --remote-host or export JETSON_REMOTE_HOST." >&2
   exit 1
 fi
 
