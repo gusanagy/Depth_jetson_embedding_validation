@@ -1,5 +1,10 @@
 # Depth Jetson Embedding Validation
 
+> Este trabalho foi desenvolvido como parte da preparação experimental de um artigo
+> para submissão/publicação no evento **SIBGRAPI**.
+
+## Visão geral
+
 Este repositório organiza a avaliação de modelos de depth na `Jetson AGX Thor`,
 com foco em:
 
@@ -17,6 +22,16 @@ O fluxo principal foi construído para seis modelos:
 - `Marigold`
 - `FoundationStereo`
 - `IGEV`
+
+## Resumo do que este repositório entrega
+
+- runners Jetson para os 6 modelos;
+- medição de energia com `tegrastats`;
+- medição de FLOPs por modelo;
+- tabela consolidada combinada;
+- tabela separada para modelos monoculares;
+- tabela separada para modelos stereo;
+- exportação em `CSV`, `PNG` e `LaTeX`.
 
 ## Estado atual
 
@@ -241,3 +256,12 @@ bash scripts/jetson/run_initial_table_remote_and_pull.sh \
   - `run_marigold_flops.sh`
   - `run_foundation_stereo_flops.sh`
   - `run_igev_flops.sh`
+
+## Referência do artigo
+
+Espaço reservado para inserir a referência do paper quando a submissão/publicação
+estiver disponível.
+
+Exemplo futuro:
+
+- `Autores. Título do artigo. SIBGRAPI, ano.`
